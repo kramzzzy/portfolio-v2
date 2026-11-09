@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   animate,
   createDrawable,
   createScope,
   createSpring,
   createTimeline,
+  createTimer,
+  random,
   stagger,
 } from 'animejs'
 
@@ -394,67 +396,128 @@ export function UIUXEngineeringVisual() {
 }
 
 
-const WEB_BARS = [42, 64, 52, 78, 66, 96, 82]
+const INITIAL_BARS = [42, 64, 52, 78, 66, 96, 82]
+
+function buildSparklinePath(bars: number[]): { path: string; peakX: number; peakY: number } {
+  const width = 140
+  const height = 28
+  const padX = 10
+  const stepX = (width - padX * 2) / (bars.length - 1)
+
+  let maxVal = -1
+  let peakIdx = 0
+  const pts = bars.map((val, i) => {
+    if (val > maxVal) {
+      maxVal = val
+      peakIdx = i
+    }
+    const x = padX + i * stepX
+    const y = Math.max(2.5, height - (val / 100) * (height - 4) - 1.5)
+    return { x, y }
+  })
+
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i]
+    const p1 = pts[i + 1]
+    const midX = ((p0.x + p1.x) / 2).toFixed(1)
+    d += ` C ${midX} ${p0.y.toFixed(1)}, ${midX} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`
+  }
+
+  return {
+    path: d,
+    peakX: pts[peakIdx].x,
+    peakY: pts[peakIdx].y,
+  }
+}
 
 /**
  * Anime.js v4 visual for "Web & Software Development" card
- * Animates the $48.2k Weekly metric, 7-bar full-stack throughput chart & SVG trend line
+ * Dynamically generates random weekly metrics and morphs the 7-bar chart & trend graph
+ * so higher numbers drive higher bars and dynamically highlight whichever bar is highest.
  */
 export function WebDevVisual() {
   const rootRef = useRef<HTMLDivElement>(null)
+  const valElRef = useRef<HTMLSpanElement>(null)
+  const pctElRef = useRef<HTMLSpanElement>(null)
+  const metricsRef = useRef({ val: 48.2, pct: 24.8 })
+  const [bars, setBars] = useState<number[]>(INITIAL_BARS)
+  const [peakIdx, setPeakIdx] = useState<number>(5)
 
   useEffect(() => {
     if (!rootRef.current) return
 
     const scope = createScope({ root: rootRef.current }).add(() => {
-      // Continuously draw & undraw the trend sparkline over the bars
-      animate(createDrawable('.webdev-sparkline'), {
-        draw: ['0 0', '0 1'],
-        duration: 1900,
-        ease: 'inOutCubic',
-        alternate: true,
-        loop: true,
-      })
+      const updateCycle = () => {
+        // Pick a dynamic random weekly value ($32.0k - $96.5k)
+        const nextVal = random(320, 965) / 10
+        // Normalize 0..1 to scale overall graph height with the number
+        const level = (nextVal - 32) / (96.5 - 32)
+        const nextPct = Math.round((11 + level * 38 + random(-25, 25) / 10) * 10) / 10
 
-      const tl = createTimeline({
-        loop: true,
-        defaults: { ease: 'outQuad' },
-      })
+        // Pick a random bar index (0..6) to be the highest peak bar
+        const nextPeakIdx = random(0, 6)
+        const peakHeight = Math.round(72 + level * 26) // 72%..98% based on how high the number is
 
-      // 1. Staggered spring bar wave
-      tl.add('.webdev-bar', {
-        scaleY: [0.35, 1.08, 0.72, 1],
-        duration: 1400,
-        delay: stagger(90, { from: 'first' }),
-        ease: createSpring({ stiffness: 210, damping: 14 }),
+        const nextBars = Array.from({ length: 7 }, (_, i) => {
+          if (i === nextPeakIdx) return peakHeight
+          const base = 22 + level * 38
+          return Math.min(peakHeight - 9, Math.max(18, Math.round(base + random(-14, 16))))
+        })
+
+        setBars(nextBars)
+        setPeakIdx(nextPeakIdx)
+
+        // Smoothly count the number and percentage to the new random values
+        animate(metricsRef.current, {
+          val: nextVal,
+          pct: nextPct,
+          duration: 850,
+          ease: 'outExpo',
+          onUpdate: () => {
+            if (valElRef.current) {
+              valElRef.current.textContent = `$${metricsRef.current.val.toFixed(1)}k`
+            }
+            if (pctElRef.current) {
+              pctElRef.current.textContent = `+${metricsRef.current.pct.toFixed(1)}%`
+            }
+          },
+        })
+
+        // Pop metric header when number updates
+        animate('.webdev-metric', {
+          scale: [1, 1.06, 1],
+          duration: 550,
+          ease: createSpring({ stiffness: 250, damping: 14 }),
+        })
+      }
+
+      // Trigger a new random number + graph reaction every 2.1s using Anime.js timer
+      createTimer({
+        duration: 2100,
+        loop: true,
+        onLoop: updateCycle,
       })
-        // 2. Peak bar & metric badge pulse
-        .add(
-          '.webdev-peak',
-          {
-            backgroundColor: ['#0219EA', '#4f6bff', '#0219EA'],
-            boxShadow: [
-              '0 0 0px rgba(79,107,255,0)',
-              '0 0 14px rgba(79,107,255,0.75)',
-              '0 0 4px rgba(79,107,255,0.25)',
-            ],
-            duration: 900,
-          },
-          '-=1100'
-        )
-        .add(
-          '.webdev-metric',
-          {
-            scale: [1, 1.05, 1],
-            duration: 650,
-            ease: createSpring({ stiffness: 240, damping: 15 }),
-          },
-          '-=900'
-        )
     })
 
     return () => scope.revert()
   }, [])
+
+  // Animate bar heights & sparkline whenever bars change
+  useEffect(() => {
+    if (!rootRef.current) return
+    const barEls = rootRef.current.querySelectorAll('.webdev-bar')
+    barEls.forEach((el, i) => {
+      animate(el, {
+        height: `${bars[i]}%`,
+        duration: 750,
+        delay: i * 35,
+        ease: createSpring({ stiffness: 210, damping: 15 }),
+      })
+    })
+  }, [bars])
+
+  const spark = buildSparklinePath(bars)
 
   return (
     <div
@@ -464,30 +527,36 @@ export function WebDevVisual() {
       {/* Top metric row */}
       <div className="flex items-center justify-between">
         <div className="webdev-metric flex items-baseline gap-1.5 origin-left">
-          <span className="text-[14px] leading-none font-semibold tracking-tight text-white tabular-nums">
+          <span
+            ref={valElRef}
+            className="text-[14px] leading-none font-semibold tracking-tight text-white tabular-nums"
+          >
             $48.2k
           </span>
           <span className="text-[11px] leading-none text-neutral-400">
             Weekly
           </span>
         </div>
-        <span className="rounded-md bg-[#0219EA]/25 border border-[#4f6bff]/35 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-[#4f6bff]">
+        <span
+          ref={pctElRef}
+          className="rounded-md bg-[#0219EA]/25 border border-[#4f6bff]/35 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-[#4f6bff] tabular-nums"
+        >
           +24.8%
         </span>
       </div>
 
-      {/* Animated Bar Plot + SVG Trend Overlay */}
+      {/* Reactive Bar Plot + SVG Trend Overlay */}
       <div className="relative mt-1.5 flex h-7 w-full items-end gap-[5px]">
-        {WEB_BARS.map((h, i) => {
-          const isPeak = i === 5
+        {bars.map((h, i) => {
+          const isPeak = i === peakIdx
           return (
             <span
               key={i}
               style={{ height: `${h}%` }}
-              className={`webdev-bar flex-1 origin-bottom rounded-[3px_3px_2px_2px] ${
+              className={`webdev-bar flex-1 origin-bottom rounded-[3px_3px_2px_2px] transition-[background-color,box-shadow] duration-300 ${
                 isPeak
-                  ? 'webdev-peak bg-[#0219EA]'
-                  : 'bg-[#0219EA]/30'
+                  ? 'bg-[#4f6bff] shadow-[0_0_12px_rgba(79,107,255,0.85)]'
+                  : 'bg-[#0219EA]/35'
               }`}
             />
           )
@@ -498,12 +567,22 @@ export function WebDevVisual() {
           preserveAspectRatio="none"
         >
           <path
-            className="webdev-sparkline"
-            d="M 6 20 C 28 14, 48 18, 70 10 C 92 14, 112 3, 134 6"
+            className="webdev-sparkline transition-all duration-500 ease-out"
+            d={spark.path}
             fill="none"
             stroke="#4f6bff"
             strokeWidth="1.6"
             strokeLinecap="round"
+          />
+          <circle
+            cx={spark.peakX}
+            cy={spark.peakY}
+            r="2.4"
+            fill="#ffffff"
+            stroke="#4f6bff"
+            strokeWidth="1.5"
+            className="transition-all duration-500 ease-out"
+            style={{ filter: 'drop-shadow(0 0 6px #4f6bff)' }}
           />
         </svg>
       </div>
