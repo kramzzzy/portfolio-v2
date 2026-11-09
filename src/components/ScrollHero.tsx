@@ -1102,8 +1102,8 @@ export default function ScrollHero({
           </div>
 
           {/* Left & Right Wing Terminal Panels framing Mark's back at the console */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-5 items-end">
-            <div className="md:col-span-5 space-y-2 sm:space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-2 sm:gap-5 items-stretch md:items-end">
+            <div className="md:col-span-5 grid grid-cols-1 gap-2 sm:gap-3 min-w-0">
               {services.slice(0, 2).map((svc, idx) => {
                 const orderIdx = idx * 2 // 0, 2
                 const stage = itemStageStyle(
@@ -1115,45 +1115,47 @@ export default function ScrollHero({
                 )
                 const cardActive = stage.opacity > 0.12
                 return (
-                  <div key={svc.id} style={stage.style}>
+                  <div key={svc.id} style={stage.style} className="flex min-w-0">
                     <SpotlightCard
                       spotlightColor="#0219EA"
                       intensity={0.32}
                       borderGlow={0.95}
-                      className="!p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono"
+                      className="w-full !p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono min-w-0"
                     >
                       {/* Terminal Window Chrome */}
-                      <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
+                      <div className="flex items-center justify-between gap-1.5 border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] text-[#4f6bff]">
+                        <span className="text-[9px] sm:text-[11px] text-[#4f6bff] truncate">
                           {TERMINAL_FILES[idx]}
                         </span>
                       </div>
 
                       {/* Terminal Command Header */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold text-white">
-                        <span className="text-[#0219EA] select-none">$</span>
-                        {cardActive ? (
-                          <DecryptedText
-                            key={`cmd-${svc.id}-${act2RunId}`}
-                            text={svc.label}
-                            animateOn="view"
-                            speed={35}
-                            sequential
-                            revealDirection="start"
-                            scrambleColor="#0219EA"
-                          />
-                        ) : (
-                          <span>{svc.label}</span>
-                        )}
+                      <div className="flex items-center gap-1 sm:gap-2 text-[11px] sm:text-base font-bold text-white min-w-0">
+                        <span className="text-[#0219EA] select-none shrink-0">$</span>
+                        <span className="truncate sm:whitespace-normal">
+                          {cardActive ? (
+                            <DecryptedText
+                              key={`cmd-${svc.id}-${act2RunId}`}
+                              text={svc.label}
+                              animateOn="view"
+                              speed={35}
+                              sequential
+                              revealDirection="start"
+                              scrambleColor="#0219EA"
+                            />
+                          ) : (
+                            <span>{svc.label}</span>
+                          )}
+                        </span>
                       </div>
 
                       {/* Terminal Streaming Output */}
-                      <div className="relative mt-1 sm:mt-1.5 text-[11px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-8 sm:max-h-none overflow-hidden">
+                      <div className="relative mt-1 sm:mt-1.5 text-[10px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-11 sm:max-h-none overflow-hidden">
                         <div
                           aria-hidden="true"
                           className="invisible select-none pointer-events-none"
@@ -1187,7 +1189,7 @@ export default function ScrollHero({
             {/* Center Spacer keeps Mark's glowing circuit jacket unobstructed */}
             <div className="hidden md:block md:col-span-2" />
 
-            <div className="md:col-span-5 space-y-2 sm:space-y-3">
+            <div className="md:col-span-5 grid grid-cols-1 gap-2 sm:gap-3 min-w-0">
               {services.slice(2, 4).map((svc, idx) => {
                 const orderIdx = idx * 2 + 1 // 1, 3
                 const stage = itemStageStyle(
@@ -1199,45 +1201,47 @@ export default function ScrollHero({
                 )
                 const cardActive = stage.opacity > 0.12
                 return (
-                  <div key={svc.id} style={stage.style}>
+                  <div key={svc.id} style={stage.style} className="flex min-w-0">
                     <SpotlightCard
                       spotlightColor="#0219EA"
                       intensity={0.32}
                       borderGlow={0.95}
-                      className="!p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono"
+                      className="w-full !p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono min-w-0"
                     >
                       {/* Terminal Window Chrome */}
-                      <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
-                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
+                      <div className="flex items-center justify-between gap-1.5 border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] text-[#4f6bff]">
+                        <span className="text-[9px] sm:text-[11px] text-[#4f6bff] truncate">
                           {TERMINAL_FILES[idx + 2]}
                         </span>
                       </div>
 
                       {/* Terminal Command Header */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold text-white">
-                        <span className="text-[#0219EA] select-none">$</span>
-                        {cardActive ? (
-                          <DecryptedText
-                            key={`cmd-${svc.id}-${act2RunId}`}
-                            text={svc.label}
-                            animateOn="view"
-                            speed={35}
-                            sequential
-                            revealDirection="start"
-                            scrambleColor="#0219EA"
-                          />
-                        ) : (
-                          <span>{svc.label}</span>
-                        )}
+                      <div className="flex items-center gap-1 sm:gap-2 text-[11px] sm:text-base font-bold text-white min-w-0">
+                        <span className="text-[#0219EA] select-none shrink-0">$</span>
+                        <span className="truncate sm:whitespace-normal">
+                          {cardActive ? (
+                            <DecryptedText
+                              key={`cmd-${svc.id}-${act2RunId}`}
+                              text={svc.label}
+                              animateOn="view"
+                              speed={35}
+                              sequential
+                              revealDirection="start"
+                              scrambleColor="#0219EA"
+                            />
+                          ) : (
+                            <span>{svc.label}</span>
+                          )}
+                        </span>
                       </div>
 
                       {/* Terminal Streaming Output */}
-                      <div className="relative mt-1 sm:mt-1.5 text-[11px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-8 sm:max-h-none overflow-hidden">
+                      <div className="relative mt-1 sm:mt-1.5 text-[10px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-11 sm:max-h-none overflow-hidden">
                         <div
                           aria-hidden="true"
                           className="invisible select-none pointer-events-none"
