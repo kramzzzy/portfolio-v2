@@ -213,6 +213,9 @@ export default function ScrollHero({
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const isMutedRef = useRef(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
   const onLoadProgressRef = useRef(onLoadProgress)
   onLoadProgressRef.current = onLoadProgress
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
@@ -238,6 +241,9 @@ export default function ScrollHero({
     engineRef.current.isModalOpen = paused
     if (paused) {
       engineRef.current.lastInteractionTime = performance.now()
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause()
+      }
     }
   }, [isModalOpen, isLoading])
 
@@ -415,6 +421,9 @@ export default function ScrollHero({
       }
 
       state.lastInteractionTime = performance.now()
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause()
+      }
       if (state.isLoopResetting) {
         state.isLoopResetting = false
         state.loopResetElapsed = 0
@@ -443,21 +452,32 @@ export default function ScrollHero({
       wakeLoop()
     }
 
-    const onPointerActivity = () => {
+    const unlockAudioOnGesture = () => {
+      const audio = audioRef.current
       const state = engineRef.current
-      if (!state.isHeroInView) return
-      const now = performance.now()
-      if (now - state.lastInteractionTime > IDLE_RESUME_MS) {
-        state.targetProgress = state.smoothProgress
+      if (!audio || isMutedRef.current) return
+      const idleMs = performance.now() - state.lastInteractionTime
+      const canPlayNow =
+        state.isHeroInView &&
+        !state.isVideoTooltipOpen &&
+        !state.isModalOpen &&
+        !state.isLoopResetting &&
+        idleMs > IDLE_RESUME_MS &&
+        state.lastScrollProgress < 0.98
+      if (canPlayNow && audio.paused) {
+        const dur = audio.duration || AUTOPLAY_DURATION_SEC
+        const targetTime = Math.min(dur - 0.05, Math.max(0, state.smoothProgress * dur))
+        if (Math.abs(audio.currentTime - targetTime) > 0.45) {
+          audio.currentTime = targetTime
+        }
+        audio.play().catch(() => {})
       }
-      state.lastInteractionTime = now
-      wakeLoop()
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('mousemove', onPointerActivity, { passive: true })
-    window.addEventListener('mousedown', onPointerActivity, { passive: true })
-    window.addEventListener('touchstart', onPointerActivity, { passive: true })
+    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true })
+    window.addEventListener('keydown', unlockAudioOnGesture, { passive: true })
+    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true })
 
     const findNearestImage = (frameIndex: number): HTMLImageElement | null => {
       const imgs = imagesRef.current
@@ -544,6 +564,30 @@ export default function ScrollHero({
         }
       }
 
+      // Sync Hero soundtrack: ONLY play during active Hero autoplay; pause immediately when scrolling or resetting
+      const audio = audioRef.current
+      if (audio) {
+        if (
+          shouldAutoplay &&
+          !state.isLoopResetting &&
+          !isMutedRef.current
+        ) {
+          const dur = audio.duration || AUTOPLAY_DURATION_SEC
+          const expectedTime = Math.min(
+            Math.max(0, dur - 0.05),
+            Math.max(0, state.smoothProgress * dur)
+          )
+          if (Math.abs(audio.currentTime - expectedTime) > 0.45) {
+            audio.currentTime = expectedTime
+          }
+          if (audio.paused) {
+            audio.play().catch(() => {})
+          }
+        } else if (!audio.paused) {
+          audio.pause()
+        }
+      }
+
       const diff = state.targetProgress - state.smoothProgress
       state.smoothProgress =
         Math.abs(diff) < 0.0004 || Math.abs(diff) > 0.65
@@ -611,9 +655,9 @@ export default function ScrollHero({
     return () => {
       cancelAnimationFrame(rafId)
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('mousemove', onPointerActivity)
-      window.removeEventListener('mousedown', onPointerActivity)
-      window.removeEventListener('touchstart', onPointerActivity)
+      window.removeEventListener('pointerdown', unlockAudioOnGesture)
+      window.removeEventListener('keydown', unlockAudioOnGesture)
+      window.removeEventListener('touchstart', unlockAudioOnGesture)
     }
   }, [loadedCount])
 
@@ -764,6 +808,68 @@ export default function ScrollHero({
         }}
         className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden"
       >
+        <audio
+          ref={audioRef}
+          src="/audio/hero-soundtrack.mp3"
+          preload="auto"
+          className="hidden"
+        />
+
+        {/* Icon-Only Hero Soundtrack Toggle (Bottom-Left) */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextMuted = !isMutedRef.current
+            isMutedRef.current = nextMuted
+            setIsAudioMuted(nextMuted)
+            const audio = audioRef.current
+            if (!audio) return
+            if (nextMuted) {
+              audio.pause()
+            } else {
+              const dur = audio.duration || AUTOPLAY_DURATION_SEC
+              audio.currentTime = Math.min(
+                Math.max(0, dur - 0.05),
+                Math.max(0, engineRef.current.smoothProgress * dur)
+              )
+              audio.play().catch(() => {})
+            }
+          }}
+          aria-label={isAudioMuted ? 'Unmute hero soundtrack' : 'Mute hero soundtrack'}
+          title={isAudioMuted ? 'Unmute Hero Audio' : 'Mute Hero Audio'}
+          style={{ opacity: Math.max(0, 1 - canvasExitProgress * 1.4) }}
+          className="absolute bottom-5 left-4 sm:bottom-7 sm:left-7 z-40 flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-neutral-950/65 backdrop-blur-xl text-neutral-300 hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+        >
+          {isAudioMuted ? (
+            <svg
+              className="h-4 w-4 text-neutral-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          ) : (
+            <svg
+              className="h-4 w-4 text-[#4f6bff]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          )}
+        </button>
         {/* Hero-Only Interactive Cyber Crosshair */}
         <Crosshair
           containerRef={stageRef}

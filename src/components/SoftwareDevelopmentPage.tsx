@@ -598,6 +598,9 @@ export default function SoftwareDevelopmentPage({
   // Note Input & AI Enrichment State
   const [noteInput, setNoteInput] = useState('')
   const [enrichingId, setEnrichingId] = useState<string | null>(null)
+  const [enrichStep, setEnrichStep] = useState<number>(-1)
+  const [enrichedDoneId, setEnrichedDoneId] = useState<string | null>(null)
+  const enrichTimersRef = useRef<number[]>([])
   const [runningWorkflowId, setRunningWorkflowId] = useState<string | null>(null)
   const [workflowActiveStep, setWorkflowActiveStep] = useState<number>(-1)
   const [completedWorkflowId, setCompletedWorkflowId] = useState<string | null>(
@@ -800,27 +803,65 @@ export default function SoftwareDevelopmentPage({
   }
 
   const handleEnrichDeal = (deal: CRMDeal) => {
+    enrichTimersRef.current.forEach((id) => window.clearTimeout(id))
+    enrichTimersRef.current = []
+
+    setSelectedDealId(deal.id)
+    setEnrichedDoneId(null)
     setEnrichingId(deal.id)
-    setTimeout(() => {
+    setEnrichStep(0)
+    setTerminalLog(
+      `[ai.enrich] Step 01/03: Scanning ${deal.company} domain & tech stack via Clearbit/Apollo...`
+    )
+    setTerminalRunKey((k) => k + 1)
+
+    const t1 = window.setTimeout(() => {
+      setEnrichStep(1)
+      setTerminalLog(
+        `[ai.enrich] Step 02/03: Evaluating ${deal.contactName} (${deal.contactRole}) buying intent via Claude 3.7...`
+      )
+      setTerminalRunKey((k) => k + 1)
+    }, 520)
+
+    const t2 = window.setTimeout(() => {
+      setEnrichStep(2)
+      setTerminalLog(
+        `[ai.enrich] Step 03/03: Upserting enriched win probability & next-step playbook for ${deal.company}...`
+      )
+      setTerminalRunKey((k) => k + 1)
+    }, 1040)
+
+    const t3 = window.setTimeout(() => {
       const boostedProb = Math.min(99, deal.probability + 8)
+      const enrichedNote: DealNote = {
+        id: `enrich-note-${Date.now()}`,
+        author: 'Nexus AI Enrichment Engine',
+        text: `Verified executive intent & tech stack for ${deal.contactName}. Boosted win score to ${boostedProb}%.`,
+        time: 'Just now',
+      }
       setDeals((prev) =>
         prev.map((d) =>
           d.id === deal.id
             ? {
                 ...d,
                 probability: boostedProb,
-                aiSummary: `[AI Enriched] Verified tech stack & decision maker intent for ${d.company}. Recommended next action: send automated ROI webhook calculator.`,
+                aiSummary: `[AI Enriched • ${boostedProb}% Score] Verified tech stack & decision maker intent for ${d.company} (${d.contactName}). Recommended next action: trigger automated ROI proposal webhook.`,
+                notes: [enrichedNote, ...d.notes],
                 updatedAt: 'Just now',
               }
             : d
         )
       )
       setEnrichingId(null)
+      setEnrichStep(-1)
+      setEnrichedDoneId(deal.id)
       setTerminalLog(
-        `[ai.enrich] Enriched ${deal.company} via Claude 3.7 → Win score updated to ${boostedProb}%`
+        `[ai.done] Enriched ${deal.company} → Win score updated to ${boostedProb}% & activity note logged`
       )
       setTerminalRunKey((k) => k + 1)
-    }, 650)
+    }, 1560)
+
+    enrichTimersRef.current.push(t1, t2, t3)
   }
 
   const handleRunWorkflow = (wf: CRMWorkflow) => {
@@ -1486,63 +1527,187 @@ export default function SoftwareDevelopmentPage({
                               <tr className="border-b border-white/10 text-[10px] font-mono uppercase text-neutral-400">
                                 <th className="py-3 px-3.5">Company &amp; Contact</th>
                                 <th className="py-3 px-3">Opportunity</th>
-                                <th className="py-3 px-3">Stage</th>
-                                <th className="py-3 px-3">ARR Value</th>
-                                <th className="py-3 px-3 text-right">AI Action</th>
+                                <th className="py-3 px-3 whitespace-nowrap">Stage (Click to Advance)</th>
+                                <th className="py-3 px-3 whitespace-nowrap">ARR Value</th>
+                                <th className="py-3 px-3.5 text-right whitespace-nowrap">AI Action</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10 text-xs">
                               {filteredDeals.map((deal) => {
                                 const isSelected = selectedDeal?.id === deal.id
                                 const isEnriching = enrichingId === deal.id
+                                const isEnrichedDone =
+                                  !isEnriching && enrichedDoneId === deal.id
+                                const stageObj =
+                                  STAGES.find((s) => s.id === deal.stage) ??
+                                  STAGES[0]
+                                const currentStageIdx = STAGES.findIndex(
+                                  (s) => s.id === deal.stage
+                                )
+                                const nextStageObj =
+                                  STAGES[(currentStageIdx + 1) % STAGES.length]
+                                const enrichLabels = [
+                                  '1/3 Scanning...',
+                                  '2/3 Scoring...',
+                                  '3/3 Syncing...',
+                                ]
+
                                 return (
-                                  <tr
-                                    key={deal.id}
-                                    onClick={() => setSelectedDealId(deal.id)}
-                                    className={`transition-colors cursor-pointer ${
-                                      isSelected
-                                        ? 'bg-[#0219EA]/20'
-                                        : 'hover:bg-white/[0.03]'
-                                    }`}
-                                  >
-                                    <td className="py-3 px-3.5">
-                                      <div className="font-semibold text-white">
-                                        {deal.company}
-                                      </div>
-                                      <div className="text-[11px] text-neutral-400">
-                                        {deal.contactName} • {deal.contactRole}
-                                      </div>
-                                    </td>
-                                    <td className="py-3 px-3 text-neutral-200">
-                                      {deal.title}
-                                    </td>
-                                    <td className="py-3 px-3">
-                                      <span className="rounded-md border border-white/15 bg-white/[0.04] px-2 py-0.5 text-[10px] font-mono text-[#4f6bff]">
-                                        {
-                                          STAGES.find(
-                                            (s) => s.id === deal.stage
-                                          )?.label
-                                        }
-                                      </span>
-                                    </td>
-                                    <td className="py-3 px-3 font-mono font-bold text-white">
-                                      ${deal.value.toLocaleString()}
-                                    </td>
-                                    <td
-                                      className="py-3 px-3 text-right"
-                                      onClick={(e) => e.stopPropagation()}
+                                  <React.Fragment key={deal.id}>
+                                    <tr
+                                      onClick={() => setSelectedDealId(deal.id)}
+                                      className={`transition-colors cursor-pointer ${
+                                        isEnriching
+                                          ? 'bg-[#0219EA]/25'
+                                          : isSelected
+                                            ? 'bg-[#0219EA]/15'
+                                            : 'hover:bg-white/[0.03]'
+                                      }`}
                                     >
-                                      <button
-                                        type="button"
-                                        onClick={() => handleEnrichDeal(deal)}
-                                        className="rounded-lg border border-[#0219EA]/70 bg-[#0219EA]/25 px-2.5 py-1 text-[10px] font-mono text-white hover:bg-[#0219EA]/50 transition-colors cursor-pointer"
+                                      <td className="py-3 px-3.5">
+                                        <div className="font-semibold text-white">
+                                          {deal.company}
+                                        </div>
+                                        <div className="text-[11px] text-neutral-400">
+                                          {deal.contactName} • {deal.contactRole}
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-3 text-neutral-200">
+                                        {deal.title}
+                                      </td>
+                                      <td
+                                        className="py-3 px-3 whitespace-nowrap"
+                                        onClick={(e) => e.stopPropagation()}
                                       >
-                                        {isEnriching
-                                          ? 'Enriching...'
-                                          : 'AI Enrich ✦'}
-                                      </button>
-                                    </td>
-                                  </tr>
+                                        <button
+                                          type="button"
+                                          title={`Click to advance stage to ${nextStageObj.label}`}
+                                          onClick={() =>
+                                            moveDealStage(
+                                              deal.id,
+                                              nextStageObj.id
+                                            )
+                                          }
+                                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/15 bg-white/[0.04] px-2.5 py-1 text-[10px] font-mono text-white hover:border-[#4f6bff] hover:bg-[#0219EA]/25 transition-all cursor-pointer"
+                                        >
+                                          <span
+                                            style={{
+                                              backgroundColor: stageObj.accent,
+                                            }}
+                                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                                          />
+                                          <span>{stageObj.label}</span>
+                                          <svg
+                                            className="h-2.5 w-2.5 text-neutral-400 shrink-0"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          >
+                                            <polyline points="9 18 15 12 9 6" />
+                                          </svg>
+                                        </button>
+                                      </td>
+                                      <td className="py-3 px-3 font-mono font-bold text-white whitespace-nowrap">
+                                        <div>${deal.value.toLocaleString()}</div>
+                                        <div className="text-[10px] font-normal text-[#4f6bff]">
+                                          {deal.probability}% win score
+                                        </div>
+                                      </td>
+                                      <td
+                                        className="py-3 px-3.5 text-right whitespace-nowrap"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEnrichDeal(deal)}
+                                          className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-[10px] font-mono font-semibold transition-all cursor-pointer ${
+                                            isEnriching
+                                              ? 'border-[#4f6bff] bg-[#0219EA] text-white shadow-[0_0_16px_rgba(2,25,234,0.6)]'
+                                              : isEnrichedDone
+                                                ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                                                : 'border-[#0219EA]/80 bg-[#0219EA]/25 text-white hover:border-[#4f6bff] hover:bg-[#0219EA]/50'
+                                          }`}
+                                        >
+                                          {isEnriching ? (
+                                            <>
+                                              <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
+                                              <span>
+                                                {enrichLabels[enrichStep] ??
+                                                  'Enriching...'}
+                                              </span>
+                                            </>
+                                          ) : isEnrichedDone ? (
+                                            <span>Enriched +8% ✓</span>
+                                          ) : (
+                                            <span>AI Enrich ✦</span>
+                                          )}
+                                        </button>
+                                      </td>
+                                    </tr>
+
+                                    {/* Animated Inline AI Enrichment Pipeline Drawer */}
+                                    {(isEnriching || isEnrichedDone) && (
+                                      <tr className="bg-neutral-950/90">
+                                        <td colSpan={5} className="px-3.5 py-2.5">
+                                          <div className="space-y-2">
+                                            <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                                              <div
+                                                style={{
+                                                  width: isEnrichedDone
+                                                    ? '100%'
+                                                    : `${Math.round(((enrichStep + 1) / 3) * 100)}%`,
+                                                }}
+                                                className={`h-full rounded-full transition-all duration-300 ${
+                                                  isEnrichedDone
+                                                    ? 'bg-emerald-400'
+                                                    : 'bg-[#4f6bff]'
+                                                }`}
+                                              />
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                              {[
+                                                '01 Clearbit/Apollo Tech Stack Scan',
+                                                '02 Claude 3.7 Executive Intent Score',
+                                                '03 Upsert CRM Win Score (+8%)',
+                                              ].map((label, stepIdx) => {
+                                                const active =
+                                                  isEnriching &&
+                                                  enrichStep === stepIdx
+                                                const done =
+                                                  isEnrichedDone ||
+                                                  (isEnriching &&
+                                                    enrichStep > stepIdx)
+                                                return (
+                                                  <div
+                                                    key={label}
+                                                    className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-mono flex items-center justify-between ${
+                                                      active
+                                                        ? 'border-[#4f6bff] bg-[#0219EA]/30 text-white'
+                                                        : done
+                                                          ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
+                                                          : 'border-white/10 bg-white/[0.02] text-neutral-400'
+                                                    }`}
+                                                  >
+                                                    <span className="truncate">
+                                                      {label}
+                                                    </span>
+                                                    {done && (
+                                                      <span className="text-emerald-300 font-bold">
+                                                        ✓
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                )
+                                              })}
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
                                 )
                               })}
                             </tbody>
@@ -2071,11 +2236,26 @@ export default function SoftwareDevelopmentPage({
                           <button
                             type="button"
                             onClick={() => handleEnrichDeal(selectedDeal)}
-                            className="rounded-lg border border-[#0219EA]/70 bg-[#0219EA]/25 px-2.5 py-1 text-[11px] font-mono text-white hover:bg-[#0219EA]/45 transition-colors cursor-pointer shrink-0"
+                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1 text-[11px] font-mono transition-all cursor-pointer shrink-0 ${
+                              enrichingId === selectedDeal.id
+                                ? 'border-[#4f6bff] bg-[#0219EA] text-white shadow-[0_0_14px_rgba(2,25,234,0.6)]'
+                                : enrichedDoneId === selectedDeal.id
+                                  ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                                  : 'border-[#0219EA]/70 bg-[#0219EA]/25 text-white hover:bg-[#0219EA]/45'
+                            }`}
                           >
-                            {enrichingId === selectedDeal.id
-                              ? 'Scoring...'
-                              : 'AI Enrich ✦'}
+                            {enrichingId === selectedDeal.id ? (
+                              <>
+                                <span className="h-2.5 w-2.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                <span>
+                                  Step 0{enrichStep + 1}/03
+                                </span>
+                              </>
+                            ) : enrichedDoneId === selectedDeal.id ? (
+                              <span>Enriched ✓</span>
+                            ) : (
+                              <span>AI Enrich ✦</span>
+                            )}
                           </button>
                         </div>
 
@@ -2089,7 +2269,15 @@ export default function SoftwareDevelopmentPage({
                               ${selectedDeal.value.toLocaleString()}
                             </div>
                           </div>
-                          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                          <div
+                            className={`rounded-xl border p-3 transition-all ${
+                              enrichingId === selectedDeal.id
+                                ? 'border-[#4f6bff] bg-[#0219EA]/25 shadow-[0_0_16px_rgba(2,25,234,0.35)]'
+                                : enrichedDoneId === selectedDeal.id
+                                  ? 'border-emerald-400/45 bg-emerald-500/10'
+                                  : 'border-white/10 bg-white/[0.03]'
+                            }`}
+                          >
                             <div className="text-[10px] font-mono uppercase text-neutral-400">
                               AI Win Score
                             </div>
@@ -2128,13 +2316,52 @@ export default function SoftwareDevelopmentPage({
                         </div>
 
                         {/* AI Deal Intelligence Summary */}
-                        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 space-y-1">
-                          <span className="text-[10px] font-mono uppercase text-[#4f6bff]">
-                            AI Deal Intelligence
-                          </span>
-                          <p className="text-xs text-neutral-200 leading-relaxed">
-                            {selectedDeal.aiSummary}
-                          </p>
+                        <div
+                          className={`rounded-xl border p-3.5 space-y-1.5 transition-all ${
+                            enrichingId === selectedDeal.id
+                              ? 'border-[#4f6bff] bg-[#0219EA]/20'
+                              : 'border-white/10 bg-white/[0.03]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase text-[#4f6bff]">
+                              AI Deal Intelligence
+                            </span>
+                            {enrichingId === selectedDeal.id && (
+                              <span className="text-[10px] font-mono text-white">
+                                Scanning Step 0{enrichStep + 1}/03...
+                              </span>
+                            )}
+                          </div>
+                          {enrichingId === selectedDeal.id ? (
+                            <div className="space-y-2 pt-1">
+                              <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                                <div
+                                  style={{
+                                    width: `${Math.round(((enrichStep + 1) / 3) * 100)}%`,
+                                  }}
+                                  className="h-full rounded-full bg-[#4f6bff] transition-all duration-300"
+                                />
+                              </div>
+                              <p className="text-xs font-mono text-blue-100">
+                                {[
+                                  '01 Querying Clearbit/Apollo company stack...',
+                                  '02 Scoring executive buying intent via Claude 3.7...',
+                                  '03 Calculating updated win score & next action...',
+                                ][enrichStep] ?? 'Enriching...'}
+                              </p>
+                            </div>
+                          ) : (
+                            <TextType
+                              key={`intel-${selectedDeal.id}-${selectedDeal.probability}`}
+                              as="p"
+                              text={selectedDeal.aiSummary}
+                              typingSpeed={10}
+                              loop={false}
+                              showCursor={false}
+                              className="text-xs text-neutral-200 leading-relaxed"
+                            />
+                          )}
                         </div>
 
                         {/* Interactive Activity Notes */}
