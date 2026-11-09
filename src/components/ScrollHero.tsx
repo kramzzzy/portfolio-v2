@@ -1,0 +1,1153 @@
+import { useEffect, useRef, useState } from 'react'
+import { portfolioData } from '../data/portfolio'
+import CountUp from './react-bits/CountUp'
+import Crosshair from './react-bits/Crosshair'
+import DecryptedText from './react-bits/DecryptedText'
+import RotatingText from './react-bits/RotatingText'
+import SpotlightCard from './react-bits/SpotlightCard'
+import StaggeredMenu from './react-bits/StaggeredMenu'
+import StarBorder from './react-bits/StarBorder'
+import TechText from './react-bits/TechText'
+import TextType from './react-bits/TextType'
+import VideoTooltip from './VideoTooltip'
+
+const TERMINAL_FILES = [
+  '~/kramz/ai-workflow.sh',
+  '~/kramz/llm-bridge.py',
+  '~/kramz/web-platform.tsx',
+  '~/kramz/ui-ux-engine.ts',
+] as const
+
+const CAPABILITY_META = [
+  {
+    phrases: [
+      'Python • n8n • Make • Zapier',
+      'Autonomous ETL Pipelines',
+      'Zero-Touch CRM Workflows',
+    ],
+    accent: '#0219EA',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="6" height="6" rx="1.5" />
+        <rect x="15" y="3" width="6" height="6" rx="1.5" />
+        <rect x="9" y="15" width="6" height="6" rx="1.5" />
+        <path d="M6 9v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9" />
+        <path d="M12 14v1" />
+      </svg>
+    ),
+  },
+  {
+    phrases: [
+      'OpenAI • Claude • REST APIs',
+      'Custom AI Agents & RAG',
+      'Multi-Model Orchestration',
+    ],
+    accent: '#0219EA',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        <circle cx="12" cy="12" r="4" />
+      </svg>
+    ),
+  },
+  {
+    phrases: [
+      'React • Next.js • TypeScript',
+      'Full-Stack Cloud Platforms',
+      'Scalable Web Architecture',
+    ],
+    accent: '#0219EA',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="16 18 22 12 16 6" />
+        <polyline points="8 6 2 12 8 18" />
+        <line x1="14" y1="4" x2="10" y2="20" />
+      </svg>
+    ),
+  },
+  {
+    phrases: [
+      'Design Systems • Motion UI',
+      'Interactive WebGL & GSAP',
+      'High-Conversion Interfaces',
+    ],
+    accent: '#0219EA',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+        <line x1="9" y1="20" x2="9" y2="10" />
+      </svg>
+    ),
+  },
+] as const
+
+const STAT_META = [
+  {
+    phrases: [
+      'Since 2016 • Full-Stack',
+      'AI & Software Operations',
+      'Enterprise & Startups',
+    ],
+    bars: [38, 56, 72, 86, 100],
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <polyline points="12 7 12 12 15.5 14" />
+      </svg>
+    ),
+  },
+  {
+    phrases: [
+      'Global Remote Delivery',
+      'US • UK • AU • APAC',
+      'End-to-End Execution',
+    ],
+    bars: [45, 68, 60, 88, 100],
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <path d="M12 3a14.5 14.5 0 0 0 0 18 14.5 14.5 0 0 0 0-18" />
+      </svg>
+    ),
+  },
+  {
+    phrases: [
+      'AI Agents & Web Apps',
+      'Production Cloud Scale',
+      'Zero-Touch Workflows',
+    ],
+    bars: [42, 62, 78, 92, 100],
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+      </svg>
+    ),
+  },
+] as const
+
+const TOTAL_FRAMES = 358
+const AUTOPLAY_DURATION_SEC = 14.5 // ~24.7 fps across 358 frames
+const IDLE_RESUME_MS = 1200 // Resume video playback 1.2s after scroll stops
+
+const frameUrl = (index: number) =>
+  `/frames/frame_${String(index).padStart(4, '0')}.webp`
+
+const MENU_ITEMS = [
+  { label: 'Home', ariaLabel: 'Go to top hero section', link: '#home' },
+  { label: 'About', ariaLabel: 'View profile and core AI capabilities', link: '#about' },
+  { label: 'Works', ariaLabel: 'Explore selected web and AI projects', link: '#works' },
+  { label: 'Stack', ariaLabel: 'View experience and engineering stack', link: '#experience' },
+  { label: 'Contact', ariaLabel: 'Get in touch with Mark Anthony Ebio', link: '#contact' },
+]
+
+function bandOpacity(
+  progress: number,
+  enterStart: number,
+  enterEnd: number,
+  exitStart: number,
+  exitEnd: number
+) {
+  if (progress < enterStart || progress > exitEnd) return 0
+  if (progress < enterEnd) {
+    return (progress - enterStart) / Math.max(0.001, enterEnd - enterStart)
+  }
+  if (progress > exitStart) {
+    return 1 - (progress - exitStart) / Math.max(0.001, exitEnd - exitStart)
+  }
+  return 1
+}
+
+interface ScrollHeroProps {
+  onOpenContact?: () => void
+  isModalOpen?: boolean
+}
+
+export default function ScrollHero({
+  onOpenContact,
+  isModalOpen = false,
+}: ScrollHeroProps) {
+  const { profile, services } = portfolioData
+  const containerRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const imagesRef = useRef<(HTMLImageElement | null)[]>(
+    new Array(TOTAL_FRAMES + 1).fill(null)
+  )
+
+  // Shared mutable state for the 60fps render loop so autoplay & scroll hand off without jumps
+  const engineRef = useRef({
+    targetProgress: 0,
+    smoothProgress: 0,
+    lastScrollProgress: 0,
+    lastInteractionTime: 0,
+    isHeroInView: true,
+    isVideoTooltipOpen: false,
+    isModalOpen: false,
+  })
+
+  useEffect(() => {
+    engineRef.current.isModalOpen = isModalOpen
+    if (isModalOpen) {
+      engineRef.current.lastInteractionTime = performance.now()
+    }
+  }, [isModalOpen])
+
+  const [progress, setProgress] = useState(0)
+  const [loadedCount, setLoadedCount] = useState(0)
+
+  const socialItems = [
+    { label: 'GitHub', link: profile.socials.github },
+    { label: 'LinkedIn', link: profile.socials.linkedin },
+    { label: 'Email', link: `mailto:${profile.email}` },
+    { label: 'Resume / CV', link: profile.cvUrl },
+  ]
+
+  useEffect(() => {
+    let cancelled = false
+    const isMobile = window.innerWidth < 768
+    const stride = isMobile ? 3 : 1
+
+    // Progressive loading order: frame 1 -> coarse scrub (step 12) -> medium (step 3) -> fine (step 1 on desktop)
+    const order: number[] = [1, TOTAL_FRAMES, 180]
+    const seen = new Set<number>(order)
+
+    for (const step of [12, 3, stride]) {
+      for (let i = 1; i <= TOTAL_FRAMES; i += step) {
+        if (!seen.has(i)) {
+          seen.add(i)
+          order.push(i)
+        }
+      }
+    }
+
+    let cursor = 0
+    let done = 0
+    const concurrency = isMobile ? 4 : 8
+
+    const loadNext = () => {
+      if (cancelled || cursor >= order.length) return
+      const frameIdx = order[cursor++]
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = frameUrl(frameIdx)
+      img.onload = () => {
+        if (cancelled) return
+        imagesRef.current[frameIdx] = img
+        done += 1
+        if (done === 1 || done % 8 === 0 || done === order.length) {
+          setLoadedCount(done)
+        }
+        loadNext()
+      }
+      img.onerror = () => {
+        if (cancelled) return
+        done += 1
+        loadNext()
+      }
+    }
+
+    for (let c = 0; c < concurrency; c++) {
+      loadNext()
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const computeScrollProgress = () => {
+      const container = containerRef.current
+      if (!container) return { progress: 0, inView: true }
+      const rect = container.getBoundingClientRect()
+      const scrollable = Math.max(1, rect.height - window.innerHeight)
+      const scrolled = -rect.top
+      const inView = rect.bottom > 80 && rect.top < window.innerHeight
+      return {
+        progress: Math.min(1, Math.max(0, scrolled / scrollable)),
+        inView,
+      }
+    }
+
+    // Initialize scroll baseline
+    const initial = computeScrollProgress()
+    engineRef.current.lastScrollProgress = initial.progress
+    engineRef.current.targetProgress = initial.progress
+    engineRef.current.smoothProgress = initial.progress
+    engineRef.current.isHeroInView = initial.inView
+
+    const onScroll = () => {
+      const state = engineRef.current
+      const { progress: nextScroll, inView } = computeScrollProgress()
+      state.isHeroInView = inView
+
+      const ds = nextScroll - state.lastScrollProgress
+      state.lastScrollProgress = nextScroll
+      if (Math.abs(ds) < 0.0001) return
+
+      state.lastInteractionTime = performance.now()
+
+      if (ds > 0) {
+        // Continue forward smoothly from whatever frame is currently showing
+        const remainingScroll = Math.max(0.12, 1 - (nextScroll - ds))
+        const remainingVisual = Math.max(0, 1 - state.targetProgress)
+        const scale = Math.max(1, remainingVisual / remainingScroll)
+        state.targetProgress =
+          nextScroll >= 0.995
+            ? 1
+            : Math.min(1, state.targetProgress + ds * scale)
+      } else {
+        // Scrub backward smoothly toward 0 as user scrolls back to top
+        const availableScroll = Math.max(0.12, nextScroll - ds)
+        const scale = Math.max(1, state.targetProgress / availableScroll)
+        state.targetProgress =
+          nextScroll <= 0.005
+            ? 0
+            : Math.max(0, state.targetProgress + ds * scale)
+      }
+    }
+
+    const onPointerActivity = () => {
+      const state = engineRef.current
+      if (!state.isHeroInView) return
+      const now = performance.now()
+      if (now - state.lastInteractionTime > IDLE_RESUME_MS) {
+        state.targetProgress = state.smoothProgress
+      }
+      state.lastInteractionTime = now
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('mousemove', onPointerActivity, { passive: true })
+    window.addEventListener('mousedown', onPointerActivity, { passive: true })
+    window.addEventListener('touchstart', onPointerActivity, { passive: true })
+
+    let rafId = 0
+    let lastWidth = 0
+    let lastHeight = 0
+    let lastDrawnFrame = -1
+    let lastTime = performance.now()
+
+    const findNearestImage = (frameIndex: number): HTMLImageElement | null => {
+      const imgs = imagesRef.current
+      if (imgs[frameIndex]) return imgs[frameIndex]
+      for (let offset = 1; offset < TOTAL_FRAMES; offset++) {
+        if (frameIndex - offset >= 1 && imgs[frameIndex - offset]) {
+          return imgs[frameIndex - offset]
+        }
+        if (frameIndex + offset <= TOTAL_FRAMES && imgs[frameIndex + offset]) {
+          return imgs[frameIndex + offset]
+        }
+      }
+      return null
+    }
+
+    const render = (now: number) => {
+      const dt = Math.min(0.05, Math.max(0, (now - lastTime) / 1000))
+      lastTime = now
+
+      const state = engineRef.current
+      const idleMs = now - state.lastInteractionTime
+      const shouldAutoplay =
+        state.isHeroInView &&
+        !state.isVideoTooltipOpen &&
+        !state.isModalOpen &&
+        idleMs > IDLE_RESUME_MS &&
+        state.lastScrollProgress < 0.98
+
+      if (shouldAutoplay) {
+        const next = state.targetProgress + dt / AUTOPLAY_DURATION_SEC
+        if (next >= 1) {
+          // Loop seamlessly back to frame 1 when idle playback finishes
+          state.targetProgress = next - 1
+          state.smoothProgress = state.targetProgress
+        } else {
+          state.targetProgress = next
+        }
+      }
+
+      const diff = state.targetProgress - state.smoothProgress
+      state.smoothProgress =
+        Math.abs(diff) < 0.0004 || Math.abs(diff) > 0.65
+          ? state.targetProgress
+          : state.smoothProgress + diff * (shouldAutoplay ? 0.25 : 0.16)
+
+      const frameIdx = Math.min(
+        TOTAL_FRAMES,
+        Math.max(1, Math.round(1 + state.smoothProgress * (TOTAL_FRAMES - 1)))
+      )
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const width = Math.floor(window.innerWidth * dpr)
+      const height = Math.floor(window.innerHeight * dpr)
+
+      const resized = width !== lastWidth || height !== lastHeight
+      if (resized) {
+        canvas.width = width
+        canvas.height = height
+        lastWidth = width
+        lastHeight = height
+      }
+
+      const img = findNearestImage(frameIdx)
+      if (img && (frameIdx !== lastDrawnFrame || resized)) {
+        lastDrawnFrame = frameIdx
+        const imgRatio = img.naturalWidth / img.naturalHeight
+        const canvasRatio = width / height
+
+        let drawW = width
+        let drawH = height
+        let offsetX = 0
+        let offsetY = 0
+
+        if (canvasRatio > imgRatio) {
+          drawW = width
+          drawH = width / imgRatio
+          offsetY = (height - drawH) * 0.35
+        } else {
+          drawH = height
+          drawW = height * imgRatio
+          offsetX = (width - drawW) * 0.5
+        }
+
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(img, offsetX, offsetY, drawW, drawH)
+      }
+
+      setProgress((prev) =>
+        Math.abs(prev - state.smoothProgress) > 0.002
+          ? state.smoothProgress
+          : prev
+      )
+
+      rafId = requestAnimationFrame(render)
+    }
+
+    rafId = requestAnimationFrame(render)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('mousemove', onPointerActivity)
+      window.removeEventListener('mousedown', onPointerActivity)
+      window.removeEventListener('touchstart', onPointerActivity)
+    }
+  }, [loadedCount])
+
+  const jumpToProgress = (target: number) => {
+    const container = containerRef.current
+    const state = engineRef.current
+    state.lastInteractionTime = performance.now()
+    state.targetProgress = target
+    if (!container) return
+    const top = container.offsetTop
+    const scrollable = Math.max(1, container.offsetHeight - window.innerHeight)
+    state.lastScrollProgress = target
+    window.scrollTo({
+      top: top + scrollable * target,
+      behavior: 'smooth',
+    })
+  }
+
+  // Opacity envelopes for the 3 acts
+  const act1Opacity =
+    progress <= 0.26
+      ? 1
+      : Math.max(0, 1 - (progress - 0.26) / (0.35 - 0.26))
+  const act2Opacity = bandOpacity(progress, 0.31, 0.39, 0.62, 0.7)
+  const act3Opacity =
+    progress < 0.66
+      ? 0
+      : Math.min(1, (progress - 0.66) / (0.75 - 0.66))
+
+  const isAct2Active = act2Opacity > 0.12
+  const [act2RunId, setAct2RunId] = useState(0)
+
+  useEffect(() => {
+    if (isAct2Active) {
+      setAct2RunId((prev) => prev + 1)
+    }
+  }, [isAct2Active])
+
+  const isAct3Active = act3Opacity > 0.12
+  const [act3RunId, setAct3RunId] = useState(0)
+
+  useEffect(() => {
+    if (isAct3Active) {
+      setAct3RunId((prev) => prev + 1)
+    }
+  }, [isAct3Active])
+
+  return (
+    <section
+      ref={containerRef}
+      id="home"
+      className="relative h-[420vh] w-full bg-neutral-950 select-none"
+    >
+      {/* Floating Centered Logo + Right-Side StaggeredMenu */}
+      <StaggeredMenu
+        isFixed={true}
+        position="right"
+        items={MENU_ITEMS}
+        socialItems={socialItems}
+        displaySocials={true}
+        displayItemNumbering={true}
+        menuButtonColor="#ffffff"
+        openMenuButtonColor="#111111"
+        changeMenuColorOnOpen={true}
+        colors={['#0219EA', '#1d4ed8']}
+        logoUrl={profile.logoUrl}
+        accentColor="#0219EA"
+      />
+
+      {/* Sticky Viewport Stage */}
+      <div
+        ref={stageRef}
+        className="sticky top-0 h-screen w-full overflow-hidden"
+      >
+        {/* Hero-Only Interactive Cyber Crosshair */}
+        <Crosshair
+          containerRef={stageRef}
+          color="#0219EA"
+          targetEffect="lock"
+          thickness={1}
+          opacity={0.85}
+          smoothing={0.35}
+          showCoordinates
+        />
+
+        {/* Autoplay + Scroll-Scrubbed Operating Frame Canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full block object-cover"
+        />
+
+        {/* Controlled Vignette & Scrims to protect HUD Typography without hiding the subject */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 42%, transparent 28%, rgba(5, 8, 15, 0.52) 78%, rgba(5, 8, 15, 0.88) 100%)',
+          }}
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-neutral-950 via-neutral-950/70 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-neutral-950/60 to-transparent" />
+
+        {/* Subtle Corner Cyber Brackets */}
+        <div className="pointer-events-none absolute inset-4 sm:inset-6 top-4 sm:top-5 bottom-6">
+          <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-[#0219EA]/80 rounded-tl-lg" />
+          <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-[#0219EA]/80 rounded-bl-lg" />
+          <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-[#0219EA]/80 rounded-br-lg" />
+        </div>
+
+        {/* ============================================================
+            ACT I (0% - 33%): Front-Facing Code & Neural HUDs
+           ============================================================ */}
+        <div
+          style={{
+            opacity: act1Opacity,
+            transform: `translate3d(0, ${(1 - act1Opacity) * -24}px, 0)`,
+            pointerEvents: act1Opacity > 0.15 ? 'auto' : 'none',
+          }}
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 flex flex-col justify-end"
+        >
+          {/* Bottom-aligned split layout leaving center subject & upper holograms clear */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="space-y-1">
+                {/* Bold Interactive TechText Name Wordmark */}
+                <div className="relative -ml-[5%] w-[105%] h-20 sm:h-24 lg:h-28">
+                  <TechText
+                    text="MARK ANTHONY EBIO"
+                    fontWeight={800}
+                    fontSize={92}
+                    letterSpacing={-0.03}
+                    align="left"
+                    color="#ffffff"
+                    accentColor="#0219EA"
+                    reveal="letter"
+                    dashLength={4}
+                    dashGap={2}
+                    strokeWidth={1.6}
+                    specks={15}
+                    intro="type"
+                    introDuration={1.8}
+                    clickKick
+                    draggable
+                    sweep
+                    guides={false}
+                  />
+                </div>
+
+                <div className="border-l-2 border-[#0219EA] pl-4 sm:pl-5 space-y-3">
+                  <h1 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-bold tracking-tight text-white leading-[1.2] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+                    <span className="block text-white">Autonomous</span>
+                    <RotatingText
+                      texts={[
+                        'AI Systems & Web Engineering.',
+                        'Workflow & Pipeline Automation.',
+                        'LLM Agents & API Integrations.',
+                        'Full-Stack Software Platforms.',
+                      ]}
+                      splitBy="words"
+                      effect="slide"
+                      direction="up"
+                      rotationInterval={2600}
+                      staggerDuration={0.05}
+                      staggerFrom="first"
+                      mainClassName="text-[#0219EA] drop-shadow-[0_0_20px_rgba(59,85,255,0.65)] overflow-hidden py-0.5"
+                    />
+                  </h1>
+
+                  <p className="text-sm sm:text-[15px] text-neutral-200/90 max-w-xl leading-relaxed drop-shadow">
+                    I build custom AI agents, end-to-end automated workflows,
+                    and scalable React &amp; Next.js software platforms that
+                    connect CRMs, LLMs, and cloud pipelines without manual
+                    bottlenecks.
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <StarBorder
+                      as="button"
+                      type="button"
+                      onClick={() => onOpenContact?.()}
+                      color="#0219EA"
+                      trailColor="#3b55ff"
+                      backgroundColor="rgba(2, 25, 234, 0.28)"
+                      textColor="#ffffff"
+                      borderColor="rgba(2, 25, 234, 0.65)"
+                      duration={4}
+                      direction="clockwise"
+                      stars={1}
+                      trailLength={0.3}
+                      thickness={1}
+                      radius={12}
+                      glow={0.75}
+                      hover="lap"
+                      sparkle={false}
+                      clickPulse
+                      theme="dark"
+                      className="!px-5 !py-2.5 text-xs sm:text-sm font-semibold tracking-wide"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span>Initialize Project</span>
+                        <span className="text-[#4f6bff]">↗</span>
+                      </span>
+                    </StarBorder>
+
+                    <StarBorder
+                      as="button"
+                      type="button"
+                      onClick={() => jumpToProgress(0.5)}
+                      color="#0219EA"
+                      trailColor="#3b55ff"
+                      backgroundColor="rgba(15, 23, 42, 0.42)"
+                      textColor="#f1f5f9"
+                      borderColor="rgba(2, 25, 234, 0.45)"
+                      duration={4}
+                      direction="clockwise"
+                      stars={1}
+                      trailLength={0.3}
+                      thickness={1}
+                      radius={12}
+                      glow={0.65}
+                      hover="lap"
+                      sparkle={false}
+                      clickPulse
+                      theme="dark"
+                      className="!px-5 !py-2.5 text-xs sm:text-sm font-medium"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span>Inspect AI Console</span>
+                        <span className="text-[#4f6bff]">↓</span>
+                      </span>
+                    </StarBorder>
+
+                    <VideoTooltip
+                      videoSrc="/videos/AI_Video.mp4"
+                      emailHref="#works"
+                      align="center"
+                      onOpenChange={(open) => {
+                        engineRef.current.isVideoTooltipOpen = open
+                        engineRef.current.lastInteractionTime = performance.now()
+                      }}
+                    >
+                      {({ open, toggle }) => (
+                        <StarBorder
+                          as="button"
+                          type="button"
+                          onClick={toggle}
+                          aria-expanded={open}
+                          color="#0219EA"
+                          trailColor="#3b55ff"
+                          backgroundColor="rgba(2, 25, 234, 0.18)"
+                          textColor="#f8fafc"
+                          borderColor="rgba(2, 25, 234, 0.55)"
+                          duration={4}
+                          direction="clockwise"
+                          stars={1}
+                          trailLength={0.3}
+                          thickness={1}
+                          radius={12}
+                          glow={0.7}
+                          hover="lap"
+                          sparkle={false}
+                          clickPulse
+                          theme="dark"
+                          className="!px-5 !py-2.5 text-xs sm:text-sm font-medium"
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <span>Sample Work</span>
+                            <span className="text-[#4f6bff]">
+                              {open ? '✕' : '▶'}
+                            </span>
+                          </span>
+                        </StarBorder>
+                      )}
+                    </VideoTooltip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right 2x2 Interactive Glass Bento Tiles */}
+            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+              {services.map((svc, idx) => {
+                const meta = CAPABILITY_META[idx % CAPABILITY_META.length]
+                return (
+                  <SpotlightCard
+                    key={svc.id}
+                    spotlightColor={meta.accent}
+                    intensity={0.32}
+                    borderGlow={0.95}
+                    onClick={() => jumpToProgress(0.5)}
+                    data-crosshair-target
+                    className="group !p-4 !rounded-2xl border border-white/15 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 flex flex-col justify-between gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)] group-hover:border-[#0219EA] group-hover:bg-[#0219EA]/40 transition-colors">
+                        {meta.icon}
+                      </div>
+                      <span className="text-[11px] font-mono text-white/45 group-hover:text-[#4f6bff] transition-colors">
+                        0{idx + 1} ↗
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug group-hover:text-blue-100 transition-colors">
+                        <DecryptedText
+                          text={svc.label}
+                          animateOn="view"
+                          loop={true}
+                          loopDelay={3400 + idx * 800}
+                          speed={38}
+                          sequential
+                          revealDirection="start"
+                          scrambleColor="#0219EA"
+                        />
+                      </h3>
+                      <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                        <TextType
+                          as="div"
+                          text={[...meta.phrases]}
+                          typingSpeed={36}
+                          deletingSpeed={22}
+                          pauseDuration={1900 + idx * 350}
+                          initialDelay={idx * 250}
+                          loop={true}
+                          showCursor={true}
+                          cursorStyle="block"
+                          cursorColor="#0219EA"
+                          className="truncate text-[#4f6bff]"
+                        />
+                      </div>
+                    </div>
+                  </SpotlightCard>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            ACT II (33% - 68%): Turned to the Holographic Command Console
+           ============================================================ */}
+        <div
+          style={{
+            opacity: act2Opacity,
+            transform: `translate3d(0, ${(1 - act2Opacity) * 20}px, 0)`,
+            pointerEvents: act2Opacity > 0.15 ? 'auto' : 'none',
+          }}
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20 flex flex-col justify-between"
+        >
+          {/* Top Center Command Header */}
+          <div className="text-center max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+              Orchestrating AI Agents, APIs &amp; Full-Stack Web Systems
+            </h2>
+          </div>
+
+          {/* Left & Right Wing Terminal Panels framing Mark's back at the console */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+            <div className="md:col-span-5 space-y-3">
+              {services.slice(0, 2).map((svc, idx) => (
+                <SpotlightCard
+                  key={svc.id}
+                  spotlightColor="#0219EA"
+                  intensity={0.32}
+                  borderGlow={0.95}
+                  className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
+                >
+                  {/* Terminal Window Chrome */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                    </div>
+                    <span className="text-[11px] text-[#4f6bff]">
+                      {TERMINAL_FILES[idx]}
+                    </span>
+                  </div>
+
+                  {/* Terminal Command Header */}
+                  <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                    <span className="text-[#0219EA] select-none">$</span>
+                    {isAct2Active ? (
+                      <DecryptedText
+                        key={`cmd-${svc.id}-${act2RunId}`}
+                        text={svc.label}
+                        animateOn="view"
+                        speed={35}
+                        sequential
+                        revealDirection="start"
+                        scrambleColor="#0219EA"
+                      />
+                    ) : (
+                      <span>{svc.label}</span>
+                    )}
+                  </div>
+
+                  {/* Terminal Streaming Output */}
+                  <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                    <div
+                      aria-hidden="true"
+                      className="invisible select-none pointer-events-none"
+                    >
+                      &gt; {svc.description}
+                    </div>
+                    {isAct2Active && (
+                      <TextType
+                        key={`out-${svc.id}-${act2RunId}`}
+                        as="div"
+                        text={svc.description}
+                        prefix="> "
+                        prefixColor="#0219EA"
+                        typingSpeed={13}
+                        initialDelay={180 + idx * 220}
+                        loop={false}
+                        showCursor={true}
+                        cursorStyle="block"
+                        cursorColor="#0219EA"
+                        cursorBlinkDuration={0.55}
+                        className="absolute inset-0 text-blue-50/90"
+                      />
+                    )}
+                  </div>
+                </SpotlightCard>
+              ))}
+            </div>
+
+            {/* Center Spacer keeps Mark's glowing circuit jacket unobstructed */}
+            <div className="hidden md:block md:col-span-2" />
+
+            <div className="md:col-span-5 space-y-3">
+              {services.slice(2, 4).map((svc, idx) => (
+                <SpotlightCard
+                  key={svc.id}
+                  spotlightColor="#0219EA"
+                  intensity={0.32}
+                  borderGlow={0.95}
+                  className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
+                >
+                  {/* Terminal Window Chrome */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                    </div>
+                    <span className="text-[11px] text-[#4f6bff]">
+                      {TERMINAL_FILES[idx + 2]}
+                    </span>
+                  </div>
+
+                  {/* Terminal Command Header */}
+                  <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                    <span className="text-[#0219EA] select-none">$</span>
+                    {isAct2Active ? (
+                      <DecryptedText
+                        key={`cmd-${svc.id}-${act2RunId}`}
+                        text={svc.label}
+                        animateOn="view"
+                        speed={35}
+                        sequential
+                        revealDirection="start"
+                        scrambleColor="#0219EA"
+                      />
+                    ) : (
+                      <span>{svc.label}</span>
+                    )}
+                  </div>
+
+                  {/* Terminal Streaming Output */}
+                  <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                    <div
+                      aria-hidden="true"
+                      className="invisible select-none pointer-events-none"
+                    >
+                      &gt; {svc.description}
+                    </div>
+                    {isAct2Active && (
+                      <TextType
+                        key={`out-${svc.id}-${act2RunId}`}
+                        as="div"
+                        text={svc.description}
+                        prefix="> "
+                        prefixColor="#0219EA"
+                        typingSpeed={13}
+                        initialDelay={320 + idx * 220}
+                        loop={false}
+                        showCursor={true}
+                        cursorStyle="block"
+                        cursorColor="#0219EA"
+                        cursorBlinkDuration={0.55}
+                        className="absolute inset-0 text-blue-50/90"
+                      />
+                    )}
+                  </div>
+                </SpotlightCard>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            ACT III (68% - 100%): Front-Facing 3D Holographic Globe
+           ============================================================ */}
+        <div
+          style={{
+            opacity: act3Opacity,
+            transform: `translate3d(0, ${(1 - act3Opacity) * 24}px, 0)`,
+            pointerEvents: act3Opacity > 0.15 ? 'auto' : 'none',
+          }}
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10 flex flex-col justify-between"
+        >
+          {/* Top-Left Heading leaving center globe & right side 100% clear */}
+          <div>
+            <h2 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+              Built for Global Production Scale
+            </h2>
+          </div>
+
+          {/* Bottom Metrics + Conversion Bar */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {profile.stats.map((stat, idx) => {
+                const meta = STAT_META[idx % STAT_META.length]
+                return (
+                  <SpotlightCard
+                    key={stat.label}
+                    spotlightColor="#0219EA"
+                    intensity={0.32}
+                    borderGlow={0.95}
+                    data-crosshair-target
+                    className="group !p-4 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-3 transition-transform duration-300 hover:-translate-y-0.5"
+                  >
+                    {/* Top Icon + Animated Telemetry Bars */}
+                    <div className="flex items-center justify-between">
+                      <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)]">
+                        {meta.icon}
+                      </div>
+                      <div className="flex items-end gap-1 h-4">
+                        {meta.bars.map((height, bIdx) => (
+                          <span
+                            key={bIdx}
+                            className="w-1 rounded-full bg-[#0219EA] shadow-[0_0_8px_rgba(2,25,234,0.8)] animate-pulse"
+                            style={{
+                              height: `${isAct3Active ? height : 25}%`,
+                              animationDelay: `${(idx * 3 + bIdx) * 160}ms`,
+                              animationDuration: '1.6s',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Rolling Odometer Metric */}
+                    <div className="text-3xl sm:text-4xl lg:text-[2.6rem] font-bold text-white font-mono leading-none tracking-tight">
+                      <CountUp
+                        key={`stat-${stat.label}-${act3RunId}`}
+                        from={0}
+                        to={stat.value}
+                        suffix={stat.suffix}
+                        duration={1.8}
+                        mode="roll"
+                      />
+                    </div>
+
+                    {/* Continuous Decrypted Title + Streaming Sub-line */}
+                    <div className="space-y-1 border-t border-white/10 pt-2.5">
+                      <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug">
+                        <DecryptedText
+                          text={stat.label}
+                          animateOn="view"
+                          loop={true}
+                          loopDelay={3200 + idx * 750}
+                          speed={36}
+                          sequential
+                          revealDirection="start"
+                          scrambleColor="#0219EA"
+                        />
+                      </h3>
+                      <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                        <TextType
+                          as="div"
+                          text={[...meta.phrases]}
+                          typingSpeed={34}
+                          deletingSpeed={20}
+                          pauseDuration={1800 + idx * 300}
+                          initialDelay={idx * 220}
+                          loop={true}
+                          showCursor={true}
+                          cursorStyle="block"
+                          cursorColor="#0219EA"
+                          className="truncate text-[#4f6bff]"
+                        />
+                      </div>
+                    </div>
+                  </SpotlightCard>
+                )
+              })}
+            </div>
+
+            <div className="lg:col-span-4 flex">
+              <SpotlightCard
+                spotlightColor="#0219EA"
+                intensity={0.32}
+                borderGlow={0.95}
+                className="w-full !p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-3.5"
+              >
+                <div className="space-y-1.5">
+                  <div className="text-base sm:text-lg font-bold text-white leading-snug">
+                    <span className="text-white block">Ready to</span>
+                    <RotatingText
+                      texts={[
+                        'Automate Your Operations?',
+                        'Ship Your Web Platform?',
+                        'Deploy Custom AI Agents?',
+                      ]}
+                      splitBy="words"
+                      effect="slide"
+                      direction="up"
+                      rotationInterval={2500}
+                      staggerDuration={0.05}
+                      staggerFrom="first"
+                      mainClassName="text-[#0219EA] drop-shadow-[0_0_18px_rgba(59,85,255,0.65)] overflow-hidden py-0.5"
+                    />
+                  </div>
+                  <div className="text-xs font-mono text-neutral-300 h-4 overflow-hidden">
+                    <TextType
+                      as="div"
+                      text={[
+                        'Direct engineering relay — ready to deploy.',
+                        'Custom LLMs, n8n pipelines & Next.js apps.',
+                      ]}
+                      typingSpeed={32}
+                      deletingSpeed={18}
+                      pauseDuration={2200}
+                      loop={true}
+                      showCursor={true}
+                      cursorStyle="block"
+                      cursorColor="#0219EA"
+                      className="truncate text-neutral-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 pt-1">
+                  <StarBorder
+                    as="button"
+                    type="button"
+                    onClick={() => onOpenContact?.()}
+                    color="#0219EA"
+                    trailColor="#3b55ff"
+                    backgroundColor="rgba(2, 25, 234, 0.28)"
+                    textColor="#ffffff"
+                    borderColor="rgba(2, 25, 234, 0.65)"
+                    duration={4}
+                    radius={12}
+                    glow={0.75}
+                    hover="lap"
+                    clickPulse
+                    className="flex-1 !py-2.5 !px-4 text-xs font-semibold"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>Start Conversation</span>
+                      <span className="text-[#4f6bff]">↗</span>
+                    </span>
+                  </StarBorder>
+
+                  <VideoTooltip
+                    videoSrc="/videos/AI_Video.mp4"
+                    emailHref="#works"
+                    align="right"
+                    onOpenChange={(open) => {
+                      engineRef.current.isVideoTooltipOpen = open
+                      engineRef.current.lastInteractionTime = performance.now()
+                    }}
+                  >
+                    {({ open, toggle }) => (
+                      <StarBorder
+                        as="button"
+                        type="button"
+                        onClick={toggle}
+                        aria-expanded={open}
+                        color="#0219EA"
+                        trailColor="#3b55ff"
+                        backgroundColor="rgba(2, 25, 234, 0.18)"
+                        textColor="#f1f5f9"
+                        borderColor="rgba(2, 25, 234, 0.55)"
+                        duration={4}
+                        radius={12}
+                        glow={0.7}
+                        hover="lap"
+                        clickPulse
+                        className="!py-2.5 !px-4 text-xs font-mono"
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>Sample Work</span>
+                          <span className="text-[#4f6bff]">
+                            {open ? '✕' : '▶'}
+                          </span>
+                        </span>
+                      </StarBorder>
+                    )}
+                  </VideoTooltip>
+                </div>
+              </SpotlightCard>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
