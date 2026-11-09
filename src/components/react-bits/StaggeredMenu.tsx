@@ -424,7 +424,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
           aria-label="Main navigation header"
         >
           <a
-            href="#hero"
+            href="/"
             onClick={closeMenu}
             className="sm-logo absolute left-1/2 -translate-x-1/2 flex items-center select-none pointer-events-auto"
             aria-label="KramZ Home"
