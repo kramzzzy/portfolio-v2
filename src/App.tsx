@@ -23,6 +23,10 @@ import {
   SiVercel,
   SiZapier,
 } from 'react-icons/si'
+import {
+  AIIntegrationVisual,
+  UIUXEngineeringVisual,
+} from './components/AboutCardAnimations'
 import CareerTrackAnimation from './components/CareerTrackAnimation'
 import ContactModal from './components/ContactModal'
 import EntranceLoader from './components/EntranceLoader'
@@ -178,7 +182,7 @@ export default function App() {
       id: 'svc-integration',
       title: services[1].label,
       description: services[1].description,
-      visual: 'integration',
+      visual: <AIIntegrationVisual />,
       colSpan: 1,
       rowSpan: 1,
     },
@@ -194,7 +198,7 @@ export default function App() {
       id: 'svc-ui-ux',
       title: services[3].label,
       description: services[3].description,
-      visual: 'analytics',
+      visual: <UIUXEngineeringVisual />,
       colSpan: 1,
       rowSpan: 1,
     },
@@ -430,7 +434,7 @@ export default function App() {
                 <MagicBento
                   items={aboutBentoItems}
                   columns={4}
-                  rowHeight={220}
+                  rowHeight={235}
                   gap={14}
                   radius={20}
                   glowColor="#0219EA"
