@@ -25,6 +25,7 @@ import {
 } from 'react-icons/si'
 import ContactModal from './components/ContactModal'
 import ScrollHero from './components/ScrollHero'
+import AnimatedContent from './components/react-bits/AnimatedContent'
 import LetterGlitch from './components/react-bits/LetterGlitch'
 import LogoLoop, { type LogoItem } from './components/react-bits/LogoLoop'
 import MagicBento, { type MagicBentoItem } from './components/react-bits/MagicBento'
@@ -369,20 +370,32 @@ export default function App() {
                 </h2>
               </div>
 
-              <MagicBento
-                items={aboutBentoItems}
-                columns={4}
-                rowHeight={220}
-                gap={14}
-                radius={20}
-                glowColor="#0219EA"
-                enableBorderGlow={true}
-                enableSpotlight={true}
-                spotlightRadius={320}
-                enableStars={true}
-                clickEffect={true}
-                textAutoHide={false}
-              />
+              <AnimatedContent
+                distance={90}
+                direction="vertical"
+                duration={0.85}
+                ease="power3.out"
+                stagger={0.09}
+                threshold={0.12}
+                trigger="scroll"
+                once={false}
+              >
+                <MagicBento
+                  items={aboutBentoItems}
+                  columns={4}
+                  rowHeight={220}
+                  gap={14}
+                  radius={20}
+                  glowColor="#0219EA"
+                  enableBorderGlow={true}
+                  enableSpotlight={true}
+                  spotlightRadius={320}
+                  enableStars={true}
+                  clickEffect={true}
+                  textAutoHide={false}
+                  intro={false}
+                />
+              </AnimatedContent>
             </section>
           </div>
         </div>
@@ -397,7 +410,17 @@ export default function App() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatedContent
+            distance={90}
+            direction="vertical"
+            duration={0.85}
+            ease="power3.out"
+            stagger={0.1}
+            threshold={0.12}
+            trigger="scroll"
+            once={false}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
             {projects.map((p, idx) => {
               const v = STAR_VARIANTS[idx % STAR_VARIANTS.length]
               return (
@@ -453,7 +476,7 @@ export default function App() {
                 </SpotlightCard>
               )
             })}
-          </div>
+          </AnimatedContent>
         </section>
       </div>
 
@@ -484,25 +507,46 @@ export default function App() {
               </h2>
             </div>
 
-            <MagicBento
-              items={experienceBentoItems}
-              columns={4}
-              rowHeight={225}
-              gap={14}
-              radius={20}
-              glowColor="#0219EA"
-              enableBorderGlow={true}
-              enableSpotlight={true}
-              spotlightRadius={320}
-              enableStars={true}
-              clickEffect={true}
-            />
+            <AnimatedContent
+              distance={90}
+              direction="vertical"
+              duration={0.85}
+              ease="power3.out"
+              stagger={0.09}
+              threshold={0.12}
+              trigger="scroll"
+              once={false}
+            >
+              <MagicBento
+                items={experienceBentoItems}
+                columns={4}
+                rowHeight={225}
+                gap={14}
+                radius={20}
+                glowColor="#0219EA"
+                enableBorderGlow={true}
+                enableSpotlight={true}
+                spotlightRadius={320}
+                enableStars={true}
+                clickEffect={true}
+                intro={false}
+              />
+            </AnimatedContent>
 
             {/* Direct Contact Card */}
-            <div
-              id="contact"
-              className="scroll-mt-24 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.4)] p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
+            <AnimatedContent
+              distance={60}
+              direction="vertical"
+              duration={0.75}
+              ease="power3.out"
+              threshold={0.1}
+              trigger="scroll"
+              once={false}
             >
+              <div
+                id="contact"
+                className="scroll-mt-24 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.4)] p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
+              >
               <div className="space-y-1.5 max-w-2xl">
                 <h3 className="text-xl sm:text-2xl font-bold text-white">
                   Need an AI workflow or web platform built?
@@ -570,7 +614,8 @@ export default function App() {
                   LinkedIn ↗
                 </StarBorder>
               </div>
-            </div>
+              </div>
+            </AnimatedContent>
           </section>
         </div>
       </div>
