@@ -343,25 +343,31 @@ export default function ScrollHero({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const HERO_SCRUB_PORTION = 0.78
+
     const computeScrollProgress = () => {
       const container = containerRef.current
-      if (!container) return { progress: 0, inView: true }
+      if (!container) return { raw: 0, scrub: 0, inView: true }
       const rect = container.getBoundingClientRect()
       const scrollable = Math.max(1, rect.height - window.innerHeight)
       const scrolled = -rect.top
       const inView = rect.bottom > 80 && rect.top < window.innerHeight
+      const raw = Math.min(1, Math.max(0, scrolled / scrollable))
+      const scrub = Math.min(1, Math.max(0, raw / HERO_SCRUB_PORTION))
       return {
-        progress: Math.min(1, Math.max(0, scrolled / scrollable)),
+        raw,
+        scrub,
         inView,
       }
     }
 
     // Initialize scroll baseline
     const initial = computeScrollProgress()
-    engineRef.current.lastScrollProgress = initial.progress
-    engineRef.current.targetProgress = initial.progress
-    engineRef.current.smoothProgress = initial.progress
+    engineRef.current.lastScrollProgress = initial.scrub
+    engineRef.current.targetProgress = initial.scrub
+    engineRef.current.smoothProgress = initial.scrub
     engineRef.current.isHeroInView = initial.inView
+    setScrollProgress(initial.raw)
 
     let rafId = 0
     let lastWidth = 0
@@ -378,19 +384,23 @@ export default function ScrollHero({
 
     const onScroll = () => {
       const state = engineRef.current
-      const { progress: nextScroll, inView } = computeScrollProgress()
+      const { raw: nextRaw, scrub: nextScroll, inView } = computeScrollProgress()
       const wasInView = state.isHeroInView
       state.isHeroInView = inView
       if (inView && !wasInView) {
         wakeLoop()
       }
 
+      setScrollProgress((prev) =>
+        Math.abs(prev - nextRaw) > 0.0015 ? nextRaw : prev
+      )
+
       const ds = nextScroll - state.lastScrollProgress
       state.lastScrollProgress = nextScroll
-      setScrollProgress((prev) =>
-        Math.abs(prev - nextScroll) > 0.002 ? nextScroll : prev
-      )
-      if (Math.abs(ds) < 0.0001) return
+      if (Math.abs(ds) < 0.0001) {
+        wakeLoop()
+        return
+      }
 
       state.lastInteractionTime = performance.now()
       if (state.isLoopResetting) {
@@ -605,7 +615,7 @@ export default function ScrollHero({
     const scrollable = Math.max(1, container.offsetHeight - window.innerHeight)
     state.lastScrollProgress = target
     window.scrollTo({
-      top: top + scrollable * target,
+      top: top + scrollable * (target * 0.78),
       behavior: 'smooth',
     })
   }
@@ -621,11 +631,9 @@ export default function ScrollHero({
       ? 0
       : Math.min(1, (progress - 0.64) / (0.71 - 0.64))
 
-  // Smooth scroll-exit envelope (84% -> 100% of hero scroll) for seamless handoff into MagicRings
-  const scrollExitProgress = Math.max(
-    0,
-    Math.min(1, (scrollProgress - 0.84) / 0.16)
-  )
+  // In-place cross-dissolve envelope (78% -> 96% of sticky hero scroll, reaching 100% before un-pinning)
+  const scrollExitProgress = smooth01((scrollProgress - 0.78) / 0.18)
+  const canvasExitProgress = smooth01((scrollExitProgress - 0.08) / 0.86)
 
   // Staggered initial/loop entrance for Act I items so they don't all pop in at once
   const [act1Entered, setAct1Entered] = useState(false)
@@ -664,7 +672,7 @@ export default function ScrollHero({
   }
 
   const getAct3ItemStyle = (idx: number) => {
-    // Staggered entrance (0.65 -> 0.83) and staggered scroll-exit (scrollExitProgress 0.0 -> 0.96)
+    // Staggered entrance (0.65 -> 0.83) and staggered in-place scroll-exit (0.0 -> 0.76 of scrollExitProgress)
     const enterStart = 0.65 + idx * 0.028
     const enterEnd = enterStart + 0.058
     const enterOp =
@@ -674,8 +682,8 @@ export default function ScrollHero({
           ? 1
           : smooth01((progress - enterStart) / (enterEnd - enterStart))
 
-    const exitStart = idx * 0.11
-    const exitEnd = Math.min(1, exitStart + 0.56)
+    const exitStart = idx * 0.1
+    const exitEnd = exitStart + 0.36
     const scrollExitOp =
       scrollExitProgress <= exitStart
         ? 1
@@ -684,8 +692,8 @@ export default function ScrollHero({
           : smooth01(1 - (scrollExitProgress - exitStart) / (exitEnd - exitStart))
 
     const op = enterOp * scrollExitOp
-    const y = (1 - enterOp) * 28 + (1 - scrollExitOp) * -24
-    const scale = 0.96 + 0.04 * op
+    const y = (1 - enterOp) * 28 + (1 - scrollExitOp) * -32
+    const scale = 0.95 + 0.05 * op
     return {
       opacity: op,
       style: {
@@ -718,7 +726,7 @@ export default function ScrollHero({
     <section
       ref={containerRef}
       id="home"
-      className="relative h-[420vh] w-full bg-neutral-950 select-none"
+      className="relative h-[460vh] w-full bg-neutral-950 select-none"
     >
       {/* Floating Centered Logo + Right-Side StaggeredMenu */}
       <StaggeredMenu
@@ -739,6 +747,9 @@ export default function ScrollHero({
       {/* Sticky Viewport Stage */}
       <div
         ref={stageRef}
+        style={{
+          pointerEvents: canvasExitProgress > 0.85 ? 'none' : 'auto',
+        }}
         className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden"
       >
         {/* Hero-Only Interactive Cyber Crosshair */}
@@ -747,7 +758,7 @@ export default function ScrollHero({
           color="#0219EA"
           targetEffect="lock"
           thickness={1}
-          opacity={0.85}
+          opacity={0.85 * Math.max(0, 1 - scrollExitProgress * 1.4)}
           smoothing={0.35}
           showCoordinates
         />
@@ -757,27 +768,32 @@ export default function ScrollHero({
           ref={canvasRef}
           style={{
             transform:
-              scrollExitProgress > 0.001
-                ? `scale(${1 + scrollExitProgress * 0.045})`
+              canvasExitProgress > 0.001
+                ? `scale(${(1 + canvasExitProgress * 0.06).toFixed(4)})`
                 : undefined,
-            opacity: 1 - scrollExitProgress * 0.55,
+            opacity: 1 - canvasExitProgress,
+            filter:
+              canvasExitProgress > 0.01
+                ? `blur(${(canvasExitProgress * 8).toFixed(1)}px)`
+                : undefined,
             WebkitMaskImage:
-              'linear-gradient(to bottom, #000 0%, #000 76%, transparent 98%)',
+              'linear-gradient(to bottom, #000 0%, #000 72%, transparent 97%)',
             maskImage:
-              'linear-gradient(to bottom, #000 0%, #000 76%, transparent 98%)',
+              'linear-gradient(to bottom, #000 0%, #000 72%, transparent 97%)',
           }}
-          className="absolute inset-0 h-full w-full block object-cover transition-transform duration-75 ease-out"
+          className="absolute inset-0 h-full w-full block object-cover"
         />
 
         {/* Controlled Vignette & Scrims to protect HUD Typography without hiding the subject */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
+            opacity: 1 - canvasExitProgress,
             background:
               'radial-gradient(circle at 50% 42%, transparent 28%, rgba(5, 8, 15, 0.52) 78%, rgba(5, 8, 15, 0.92) 100%)',
           }}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-neutral-950/60 to-transparent" />
 
         {/* Seamless Loop-End Reboot Loading Overlay */}
@@ -815,7 +831,10 @@ export default function ScrollHero({
         )}
 
         {/* Subtle Corner Cyber Brackets */}
-        <div className="pointer-events-none absolute inset-4 sm:inset-6 top-4 sm:top-5 bottom-6">
+        <div
+          style={{ opacity: Math.max(0, 1 - scrollExitProgress * 1.6) }}
+          className="pointer-events-none absolute inset-4 sm:inset-6 top-4 sm:top-5 bottom-6"
+        >
           <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-[#0219EA]/80 rounded-tl-lg" />
           <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-[#0219EA]/80 rounded-bl-lg" />
           <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-[#0219EA]/80 rounded-br-lg" />

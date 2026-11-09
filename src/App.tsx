@@ -335,15 +335,15 @@ export default function App() {
         onClose={() => setContactOpen(false)}
       />
 
-      {/* Top Section: Seamless Hero-to-MagicRings Emergence + LogoLoop + About Bento Grid */}
-      <div className="relative isolate z-20 -mt-12 pt-16 sm:-mt-16 sm:pt-24 w-full overflow-hidden">
+      {/* Top Section: Seamless In-Place Hero-to-MagicRings Cross-Dissolve + LogoLoop + About Bento Grid */}
+      <div className="relative isolate z-20 -mt-[105vh] pt-[36vh] w-full overflow-hidden pointer-events-none">
         <div
           aria-hidden="true"
           style={{
             WebkitMaskImage:
-              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 14%, #000 30%, #000 84%, transparent 100%)',
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 14%, #000 32%, #000 84%, transparent 100%)',
             maskImage:
-              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 14%, #000 30%, #000 84%, transparent 100%)',
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 14%, #000 32%, #000 84%, transparent 100%)',
           }}
           className="pointer-events-none absolute inset-0 z-0"
         >
@@ -363,19 +363,19 @@ export default function App() {
           />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 pointer-events-auto">
           {/* Emerging Energy Stage + Tools, AI & Software LogoLoop Band before Bento Grid */}
           <AnimatedContent
-            distance={50}
+            distance={55}
             direction="vertical"
-            duration={0.75}
-            delay={0.04}
+            duration={0.8}
+            delay={0.06}
             ease="power3.out"
-            threshold={0.16}
+            threshold={0.18}
             trigger="scroll"
             once={false}
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-10 sm:pb-14 text-neutral-300">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 sm:pt-10 sm:pb-16 text-neutral-300">
               <LogoLoop
                 logos={TOOL_LOGOS}
                 speed={90}
@@ -398,12 +398,12 @@ export default function App() {
             {/* About Me & Core Capabilities MagicBento Section */}
             <section id="about" className="scroll-mt-24 space-y-8">
               <AnimatedContent
-                distance={45}
+                distance={50}
                 direction="vertical"
                 duration={0.75}
-                delay={0.16}
+                delay={0.18}
                 ease="power3.out"
-                threshold={0.2}
+                threshold={0.22}
                 trigger="scroll"
                 once={false}
               >
@@ -418,7 +418,7 @@ export default function App() {
                 distance={85}
                 direction="vertical"
                 duration={0.8}
-                delay={0.26}
+                delay={0.28}
                 ease="power3.out"
                 stagger={0.14}
                 threshold={0.18}
