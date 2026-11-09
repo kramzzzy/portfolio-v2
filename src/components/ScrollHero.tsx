@@ -848,16 +848,16 @@ export default function ScrollHero({
             visibility: act1Opacity > 0.01 ? 'visible' : 'hidden',
             pointerEvents: act1Opacity > 0.1 ? 'auto' : 'none',
           }}
-          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-12 flex flex-col justify-end"
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-16 pb-4 sm:pt-20 sm:pb-12 flex flex-col justify-end"
         >
           {/* Bottom-aligned split layout leaving center subject & upper holograms clear */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-end">
-            <div className="lg:col-span-7 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-6 items-end">
+            <div className="lg:col-span-7 space-y-2 sm:space-y-4">
               <div className="space-y-1">
                 {/* Bold Interactive TechText Name Wordmark (Stagger Slot 0) */}
                 <div
                   style={getAct1ItemStyle(0)}
-                  className="relative -ml-[5%] w-[105%] h-14 sm:h-24 lg:h-28"
+                  className="relative -ml-[2%] w-[102%] h-8 sm:-ml-[5%] sm:w-[105%] sm:h-24 lg:h-28"
                 >
                   <TechText
                     key={isLoading ? 'loading' : `ready-${loopCycle}`}
@@ -885,9 +885,9 @@ export default function ScrollHero({
                 {/* Heading, Bio & CTAs Block (Stagger Slot 1) */}
                 <div
                   style={getAct1ItemStyle(1)}
-                  className="border-l-2 border-[#0219EA] pl-4 sm:pl-5 space-y-3"
+                  className="border-l-2 border-[#0219EA] pl-3 sm:pl-5 space-y-1.5 sm:space-y-3"
                 >
-                  <h1 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-bold tracking-tight text-white leading-[1.2] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+                  <h1 className="text-lg sm:text-3xl lg:text-[2.25rem] font-bold tracking-tight text-white leading-[1.15] sm:leading-[1.2] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
                     <span className="block text-white">Autonomous</span>
                     <RotatingText
                       texts={[
@@ -906,14 +906,14 @@ export default function ScrollHero({
                     />
                   </h1>
 
-                  <p className="text-sm sm:text-[15px] text-neutral-200/90 max-w-xl leading-relaxed drop-shadow">
+                  <p className="text-xs sm:text-[15px] text-neutral-200/90 max-w-xl leading-snug sm:leading-relaxed line-clamp-2 sm:line-clamp-none drop-shadow">
                     I build custom AI agents, end-to-end automated workflows,
                     and scalable React &amp; Next.js software platforms that
                     connect CRMs, LLMs, and cloud pipelines without manual
                     bottlenecks.
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 sm:gap-3 pt-0.5 sm:pt-1">
                     <StarBorder
                       as="button"
                       type="button"
@@ -934,9 +934,9 @@ export default function ScrollHero({
                       sparkle={false}
                       clickPulse
                       theme="dark"
-                      className="!px-5 !py-2.5 text-xs sm:text-sm font-semibold tracking-wide"
+                      className="!px-2.5 !py-1.5 sm:!px-5 sm:!py-2.5 text-[11px] sm:text-sm font-semibold tracking-wide whitespace-nowrap"
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 sm:gap-2">
                         <span>Initialize Project</span>
                         <span className="text-[#4f6bff]">↗</span>
                       </span>
@@ -962,9 +962,9 @@ export default function ScrollHero({
                       sparkle={false}
                       clickPulse
                       theme="dark"
-                      className="!px-5 !py-2.5 text-xs sm:text-sm font-medium"
+                      className="!px-2.5 !py-1.5 sm:!px-5 sm:!py-2.5 text-[11px] sm:text-sm font-medium whitespace-nowrap"
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 sm:gap-2">
                         <span>Inspect AI Console</span>
                         <span className="text-[#4f6bff]">↓</span>
                       </span>
@@ -1001,9 +1001,9 @@ export default function ScrollHero({
                           sparkle={false}
                           clickPulse
                           theme="dark"
-                          className="!px-5 !py-2.5 text-xs sm:text-sm font-medium"
+                          className="!px-2.5 !py-1.5 sm:!px-5 sm:!py-2.5 text-[11px] sm:text-sm font-medium whitespace-nowrap"
                         >
-                          <span className="inline-flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 sm:gap-2">
                             <span>Sample Work</span>
                             <span className="text-[#4f6bff]">
                               {open ? '✕' : '▶'}
@@ -1018,7 +1018,7 @@ export default function ScrollHero({
             </div>
 
             {/* Right 2x2 Interactive Glass Bento Tiles (Stagger Slots 2..5) */}
-            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+            <div className="lg:col-span-5 grid grid-cols-2 gap-2 sm:gap-3">
               {services.map((svc, idx) => {
                 const meta = CAPABILITY_META[idx % CAPABILITY_META.length]
                 return (
@@ -1033,19 +1033,19 @@ export default function ScrollHero({
                       borderGlow={0.95}
                       onClick={() => jumpToProgress(0.5)}
                       data-crosshair-target
-                      className="group w-full !p-4 !rounded-2xl border border-white/15 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 flex flex-col justify-between gap-3"
+                      className="group w-full !p-2.5 sm:!p-4 !rounded-xl sm:!rounded-2xl border border-white/15 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 flex flex-col justify-between gap-1.5 sm:gap-3"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)] group-hover:border-[#0219EA] group-hover:bg-[#0219EA]/40 transition-colors">
+                        <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)] group-hover:border-[#0219EA] group-hover:bg-[#0219EA]/40 transition-colors">
                           {meta.icon}
                         </div>
-                        <span className="text-[11px] font-mono text-white/45 group-hover:text-[#4f6bff] transition-colors">
+                        <span className="text-[10px] sm:text-[11px] font-mono text-white/45 group-hover:text-[#4f6bff] transition-colors">
                           0{idx + 1} ↗
                         </span>
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug group-hover:text-blue-100 transition-colors">
+                      <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                        <h3 className="text-[11px] sm:text-[13px] font-semibold text-white leading-tight sm:leading-snug truncate sm:whitespace-normal group-hover:text-blue-100 transition-colors">
                           <DecryptedText
                             text={svc.label}
                             animateOn="view"
@@ -1057,7 +1057,7 @@ export default function ScrollHero({
                             scrambleColor="#0219EA"
                           />
                         </h3>
-                        <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                        <div className="text-[10px] sm:text-[11px] font-mono text-[#4f6bff] h-3.5 sm:h-4 overflow-hidden">
                           <TextType
                             as="div"
                             text={[...meta.phrases]}
@@ -1089,21 +1089,21 @@ export default function ScrollHero({
             visibility: act2Opacity > 0.01 ? 'visible' : 'hidden',
             pointerEvents: act2Opacity > 0.1 ? 'auto' : 'none',
           }}
-          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20 flex flex-col justify-between"
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-16 pb-5 sm:pt-20 sm:pb-20 flex flex-col justify-between"
         >
           {/* Top Center Command Header (Enters & Exits First) */}
           <div
             style={itemStageStyle(progress, 0.285, 0.345, 0.585, 0.645).style}
             className="text-center max-w-xl mx-auto"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+            <h2 className="text-lg sm:text-3xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
               Orchestrating AI Agents, APIs &amp; Full-Stack Web Systems
             </h2>
           </div>
 
           {/* Left & Right Wing Terminal Panels framing Mark's back at the console */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
-            <div className="md:col-span-5 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-5 items-end">
+            <div className="md:col-span-5 space-y-2 sm:space-y-3">
               {services.slice(0, 2).map((svc, idx) => {
                 const orderIdx = idx * 2 // 0, 2
                 const stage = itemStageStyle(
@@ -1120,22 +1120,22 @@ export default function ScrollHero({
                       spotlightColor="#0219EA"
                       intensity={0.32}
                       borderGlow={0.95}
-                      className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
+                      className="!p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono"
                     >
                       {/* Terminal Window Chrome */}
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
                         </div>
-                        <span className="text-[11px] text-[#4f6bff]">
+                        <span className="text-[10px] sm:text-[11px] text-[#4f6bff]">
                           {TERMINAL_FILES[idx]}
                         </span>
                       </div>
 
                       {/* Terminal Command Header */}
-                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold text-white">
                         <span className="text-[#0219EA] select-none">$</span>
                         {cardActive ? (
                           <DecryptedText
@@ -1153,7 +1153,7 @@ export default function ScrollHero({
                       </div>
 
                       {/* Terminal Streaming Output */}
-                      <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                      <div className="relative mt-1 sm:mt-1.5 text-[11px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-8 sm:max-h-none overflow-hidden">
                         <div
                           aria-hidden="true"
                           className="invisible select-none pointer-events-none"
@@ -1187,7 +1187,7 @@ export default function ScrollHero({
             {/* Center Spacer keeps Mark's glowing circuit jacket unobstructed */}
             <div className="hidden md:block md:col-span-2" />
 
-            <div className="md:col-span-5 space-y-3">
+            <div className="md:col-span-5 space-y-2 sm:space-y-3">
               {services.slice(2, 4).map((svc, idx) => {
                 const orderIdx = idx * 2 + 1 // 1, 3
                 const stage = itemStageStyle(
@@ -1204,22 +1204,22 @@ export default function ScrollHero({
                       spotlightColor="#0219EA"
                       intensity={0.32}
                       borderGlow={0.95}
-                      className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
+                      className="!p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-[#0219EA]/45 font-mono"
                     >
                       {/* Terminal Window Chrome */}
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1 sm:pb-2 sm:mb-2.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400/80" />
                         </div>
-                        <span className="text-[11px] text-[#4f6bff]">
+                        <span className="text-[10px] sm:text-[11px] text-[#4f6bff]">
                           {TERMINAL_FILES[idx + 2]}
                         </span>
                       </div>
 
                       {/* Terminal Command Header */}
-                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold text-white">
                         <span className="text-[#0219EA] select-none">$</span>
                         {cardActive ? (
                           <DecryptedText
@@ -1237,7 +1237,7 @@ export default function ScrollHero({
                       </div>
 
                       {/* Terminal Streaming Output */}
-                      <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                      <div className="relative mt-1 sm:mt-1.5 text-[11px] sm:text-[13px] text-blue-50/90 leading-snug sm:leading-relaxed max-h-8 sm:max-h-none overflow-hidden">
                         <div
                           aria-hidden="true"
                           className="invisible select-none pointer-events-none"
@@ -1278,17 +1278,17 @@ export default function ScrollHero({
             visibility: act3Opacity > 0.01 ? 'visible' : 'hidden',
             pointerEvents: act3Opacity > 0.1 ? 'auto' : 'none',
           }}
-          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10 flex flex-col justify-between"
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-16 pb-5 sm:pt-24 sm:pb-10 flex flex-col justify-between"
         >
           {/* Top-Left Heading leaving center globe & right side 100% clear (Stagger Slot 0) */}
           <div style={getAct3ItemStyle(0).style}>
-            <h2 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+            <h2 className="text-xl sm:text-4xl font-bold text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
               Built for Global Production Scale
             </h2>
           </div>
 
           {/* Bottom Metrics + Conversion Bar (Stagger Slots 1..4) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4 items-stretch">
             <div className="lg:col-span-8 grid grid-cols-3 gap-2 sm:gap-4">
               {profile.stats.map((stat, idx) => {
                 const meta = STAT_META[idx % STAT_META.length]
@@ -1305,7 +1305,7 @@ export default function ScrollHero({
                       intensity={0.32}
                       borderGlow={0.95}
                       data-crosshair-target
-                      className="group w-full !p-3 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-2 sm:gap-3 transition-transform duration-300 hover:-translate-y-0.5"
+                      className="group w-full !p-2.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-white/15 flex flex-col justify-between gap-1.5 sm:gap-3 transition-transform duration-300 hover:-translate-y-0.5"
                     >
                       {/* Top Icon + Animated Telemetry Bars */}
                       <div className="flex items-center justify-between">
@@ -1344,8 +1344,8 @@ export default function ScrollHero({
                       </div>
 
                       {/* Continuous Decrypted Title + Streaming Sub-line */}
-                      <div className="space-y-1 border-t border-white/10 pt-2.5">
-                        <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug">
+                      <div className="space-y-0.5 sm:space-y-1 border-t border-white/10 pt-1.5 sm:pt-2.5 min-w-0">
+                        <h3 className="text-[11px] sm:text-[13px] font-semibold text-white leading-tight sm:leading-snug truncate sm:whitespace-normal">
                           <DecryptedText
                             text={stat.label}
                             animateOn="view"
@@ -1357,7 +1357,7 @@ export default function ScrollHero({
                             scrambleColor="#0219EA"
                           />
                         </h3>
-                        <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                        <div className="text-[10px] sm:text-[11px] font-mono text-[#4f6bff] h-3.5 sm:h-4 overflow-hidden">
                           <TextType
                             as="div"
                             text={[...meta.phrases]}
@@ -1387,10 +1387,10 @@ export default function ScrollHero({
                 spotlightColor="#0219EA"
                 intensity={0.32}
                 borderGlow={0.95}
-                className="w-full !p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-3.5"
+                className="w-full !p-3.5 sm:!p-5 !rounded-xl sm:!rounded-2xl border border-white/15 flex flex-col justify-between gap-2.5 sm:gap-3.5"
               >
-                <div className="space-y-1.5">
-                  <div className="text-base sm:text-lg font-bold text-white leading-snug">
+                <div className="space-y-1 sm:space-y-1.5">
+                  <div className="text-sm sm:text-lg font-bold text-white leading-snug">
                     <span className="text-white block">Ready to</span>
                     <RotatingText
                       texts={[
@@ -1407,7 +1407,7 @@ export default function ScrollHero({
                       mainClassName="text-[#0219EA] drop-shadow-[0_0_18px_rgba(59,85,255,0.65)] overflow-hidden py-0.5"
                     />
                   </div>
-                  <div className="text-xs font-mono text-neutral-300 h-4 overflow-hidden">
+                  <div className="text-[11px] sm:text-xs font-mono text-neutral-300 h-3.5 sm:h-4 overflow-hidden">
                     <TextType
                       as="div"
                       text={[
@@ -1426,7 +1426,7 @@ export default function ScrollHero({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 pt-1">
+                <div className="flex items-center gap-2 sm:gap-2.5 pt-0.5 sm:pt-1">
                   <StarBorder
                     as="button"
                     type="button"
@@ -1441,7 +1441,7 @@ export default function ScrollHero({
                     glow={0.75}
                     hover="lap"
                     clickPulse
-                    className="flex-1 !py-2.5 !px-4 text-xs font-semibold"
+                    className="flex-1 !py-2 sm:!py-2.5 !px-3 sm:!px-4 text-[11px] sm:text-xs font-semibold"
                   >
                     <span className="inline-flex items-center gap-1.5">
                       <span>Start Conversation</span>
