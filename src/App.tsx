@@ -119,20 +119,20 @@ export default function App() {
       content: (
         <div className="flex h-full flex-col justify-between gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5 items-start flex-1 min-h-0">
-            {/* Left Column: Portrait Photo + Name & Subtitle underneath */}
-            <div className="sm:col-span-5 flex flex-col gap-2.5">
-              <div className="w-36 sm:w-full max-w-[185px] aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-[0_8px_24px_rgba(0,0,0,0.45)] shrink-0">
+            {/* Left Column: Side-by-side Portrait + Name on mobile, stacked on sm+ */}
+            <div className="sm:col-span-5 flex flex-row sm:flex-col items-start gap-3.5 sm:gap-2.5">
+              <div className="w-32 sm:w-full max-w-[185px] aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-[0_8px_24px_rgba(0,0,0,0.45)] shrink-0">
                 <img
                   src={profile.aboutImage}
                   alt={profile.name}
                   className="h-full w-full object-cover object-top"
                 />
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1 sm:space-y-0.5 pt-1 sm:pt-0 min-w-0">
                 <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
                   {profile.name}
                 </h3>
-                <p className="text-[11px] sm:text-xs font-medium text-[#4f6bff] leading-snug">
+                <p className="text-xs font-medium text-[#4f6bff] leading-snug">
                   {profile.tagline}
                 </p>
               </div>
