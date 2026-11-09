@@ -99,6 +99,7 @@ export default function App() {
   const [contactOpen, setContactOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [loadedFrames, setLoadedFrames] = useState(0)
+  const [totalFrames, setTotalFrames] = useState(180)
   const {
     profile,
     services,
@@ -315,7 +316,7 @@ export default function App() {
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
       <EntranceLoader
         loadedFrames={loadedFrames}
-        targetFrames={120}
+        totalFrames={totalFrames}
         onComplete={() => setIsLoading(false)}
       />
 
@@ -323,7 +324,10 @@ export default function App() {
         onOpenContact={() => setContactOpen(true)}
         isModalOpen={contactOpen}
         isLoading={isLoading}
-        onLoadProgress={(loaded) => setLoadedFrames(loaded)}
+        onLoadProgress={(loaded, total) => {
+          setLoadedFrames(loaded)
+          setTotalFrames(total)
+        }}
       />
 
       <ContactModal
@@ -349,6 +353,7 @@ export default function App() {
             radiusStep={0.1}
             hoverScale={1.2}
             clickBurst={true}
+            maxDevicePixelRatio={1.5}
           />
         </div>
 
@@ -507,6 +512,7 @@ export default function App() {
             edgeFade={0.18}
             centerFade={0.15}
             clickEffect="tear"
+            dpr={1.5}
           />
         </div>
 

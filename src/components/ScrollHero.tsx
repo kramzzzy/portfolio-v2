@@ -216,13 +216,26 @@ export default function ScrollHero({
   useEffect(() => {
     let cancelled = false
     const isMobile = window.innerWidth < 768
-    const stride = isMobile ? 3 : 1
+    const nav = navigator as Navigator & {
+      deviceMemory?: number
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }
+    const lowMem = (nav.deviceMemory ?? 8) <= 4
+    const slowNet =
+      Boolean(nav.connection?.saveData) ||
+      nav.connection?.effectiveType === '2g' ||
+      nav.connection?.effectiveType === 'slow-2g' ||
+      nav.connection?.effectiveType === '3g'
 
-    // Progressive loading order: frame 1 -> coarse scrub (step 12) -> medium (step 3) -> fine (step 1 on desktop)
+    // Adaptive stride: 3 on phones/slow net (121 frames), 2 on tablets/4GB laptops (180 frames), 1 on desktop
+    const stride = isMobile || slowNet ? 3 : lowMem ? 2 : 1
+
+    // Progressive loading order: frame 1 -> coarse scrub (step 12) -> medium (step 3) -> even (step 2) -> fine
     const order: number[] = [1, TOTAL_FRAMES, 180]
     const seen = new Set<number>(order)
 
-    for (const step of [12, 3, stride]) {
+    const passes = stride === 3 ? [12, 3] : [12, 6, 2]
+    for (const step of passes) {
       for (let i = 1; i <= TOTAL_FRAMES; i += step) {
         if (!seen.has(i)) {
           seen.add(i)
@@ -231,9 +244,23 @@ export default function ScrollHero({
       }
     }
 
+    // Sync target for EntranceLoader: full 0%-100% coverage across the timeline (121 frames on phone, 180 on laptop)
+    const syncTarget = order.length
+
+    if (stride === 1) {
+      for (let i = 1; i <= TOTAL_FRAMES; i += 1) {
+        if (!seen.has(i)) {
+          seen.add(i)
+          order.push(i)
+        }
+      }
+    }
+
+    onLoadProgressRef.current?.(0, syncTarget)
+
     let cursor = 0
     let done = 0
-    const concurrency = isMobile ? 4 : 8
+    const concurrency = isMobile ? 10 : 18
 
     const loadNext = () => {
       if (cancelled || cursor >= order.length) return
@@ -245,16 +272,20 @@ export default function ScrollHero({
         if (cancelled) return
         imagesRef.current[frameIdx] = img
         done += 1
-        if (done === 1 || done % 6 === 0 || done === order.length) {
+        if (done === 1 || done % 4 === 0 || done === syncTarget || done === order.length) {
           setLoadedCount(done)
-          onLoadProgressRef.current?.(done, order.length)
+        }
+        if (done <= syncTarget && (done === 1 || done % 2 === 0 || done === syncTarget)) {
+          onLoadProgressRef.current?.(done, syncTarget)
         }
         loadNext()
       }
       img.onerror = () => {
         if (cancelled) return
         done += 1
-        onLoadProgressRef.current?.(done, order.length)
+        if (done <= syncTarget) {
+          onLoadProgressRef.current?.(done, syncTarget)
+        }
         loadNext()
       }
     }
@@ -294,10 +325,27 @@ export default function ScrollHero({
     engineRef.current.smoothProgress = initial.progress
     engineRef.current.isHeroInView = initial.inView
 
+    let rafId = 0
+    let lastWidth = 0
+    let lastHeight = 0
+    let lastDrawnFrame = -1
+    let lastTime = performance.now()
+
+    const wakeLoop = () => {
+      if (!rafId) {
+        lastTime = performance.now()
+        rafId = requestAnimationFrame(render)
+      }
+    }
+
     const onScroll = () => {
       const state = engineRef.current
       const { progress: nextScroll, inView } = computeScrollProgress()
+      const wasInView = state.isHeroInView
       state.isHeroInView = inView
+      if (inView && !wasInView) {
+        wakeLoop()
+      }
 
       const ds = nextScroll - state.lastScrollProgress
       state.lastScrollProgress = nextScroll
@@ -323,6 +371,7 @@ export default function ScrollHero({
             ? 0
             : Math.max(0, state.targetProgress + ds * scale)
       }
+      wakeLoop()
     }
 
     const onPointerActivity = () => {
@@ -333,18 +382,13 @@ export default function ScrollHero({
         state.targetProgress = state.smoothProgress
       }
       state.lastInteractionTime = now
+      wakeLoop()
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('mousemove', onPointerActivity, { passive: true })
     window.addEventListener('mousedown', onPointerActivity, { passive: true })
     window.addEventListener('touchstart', onPointerActivity, { passive: true })
-
-    let rafId = 0
-    let lastWidth = 0
-    let lastHeight = 0
-    let lastDrawnFrame = -1
-    let lastTime = performance.now()
 
     const findNearestImage = (frameIndex: number): HTMLImageElement | null => {
       const imgs = imagesRef.current
@@ -361,6 +405,7 @@ export default function ScrollHero({
     }
 
     const render = (now: number) => {
+      rafId = 0
       const dt = Math.min(0.05, Math.max(0, (now - lastTime) / 1000))
       lastTime = now
 
@@ -395,9 +440,12 @@ export default function ScrollHero({
         Math.max(1, Math.round(1 + state.smoothProgress * (TOTAL_FRAMES - 1)))
       )
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const width = Math.floor(window.innerWidth * dpr)
-      const height = Math.floor(window.innerHeight * dpr)
+      // Cap internal canvas buffer to source 1440px resolution to avoid costly 4K upscaling on mobile/Retina
+      const rawDpr = Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.5)
+      const scaleCap = Math.min(1, 1440 / Math.max(1, window.innerWidth * rawDpr))
+      const effDpr = rawDpr * scaleCap
+      const width = Math.max(1, Math.floor(window.innerWidth * effDpr))
+      const height = Math.max(1, Math.floor(window.innerHeight * effDpr))
 
       const resized = width !== lastWidth || height !== lastHeight
       if (resized) {
@@ -438,7 +486,10 @@ export default function ScrollHero({
           : prev
       )
 
-      rafId = requestAnimationFrame(render)
+      // Sleep the 60fps loop when the hero section is scrolled out of view and settled
+      if (state.isHeroInView || Math.abs(state.targetProgress - state.smoothProgress) > 0.0005) {
+        rafId = requestAnimationFrame(render)
+      }
     }
 
     rafId = requestAnimationFrame(render)
@@ -520,7 +571,7 @@ export default function ScrollHero({
       {/* Sticky Viewport Stage */}
       <div
         ref={stageRef}
-        className="sticky top-0 h-screen w-full overflow-hidden"
+        className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden"
       >
         {/* Hero-Only Interactive Cyber Crosshair */}
         <Crosshair
@@ -566,14 +617,14 @@ export default function ScrollHero({
             transform: `translate3d(0, ${(1 - act1Opacity) * -24}px, 0)`,
             pointerEvents: act1Opacity > 0.15 ? 'auto' : 'none',
           }}
-          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 flex flex-col justify-end"
+          className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-12 flex flex-col justify-end"
         >
           {/* Bottom-aligned split layout leaving center subject & upper holograms clear */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
-            <div className="lg:col-span-7 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-end">
+            <div className="lg:col-span-7 space-y-3 sm:space-y-4">
               <div className="space-y-1">
                 {/* Bold Interactive TechText Name Wordmark */}
-                <div className="relative -ml-[5%] w-[105%] h-20 sm:h-24 lg:h-28">
+                <div className="relative -ml-[5%] w-[105%] h-14 sm:h-24 lg:h-28">
                   <TechText
                     key={isLoading ? 'loading' : 'ready'}
                     text="MARK ANTHONY EBIO"
@@ -969,8 +1020,8 @@ export default function ScrollHero({
           </div>
 
           {/* Bottom Metrics + Conversion Bar */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-stretch">
+            <div className="lg:col-span-8 grid grid-cols-3 gap-2 sm:gap-4">
               {profile.stats.map((stat, idx) => {
                 const meta = STAT_META[idx % STAT_META.length]
                 return (
@@ -980,14 +1031,14 @@ export default function ScrollHero({
                     intensity={0.32}
                     borderGlow={0.95}
                     data-crosshair-target
-                    className="group !p-4 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-3 transition-transform duration-300 hover:-translate-y-0.5"
+                    className="group !p-3 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-2 sm:gap-3 transition-transform duration-300 hover:-translate-y-0.5"
                   >
                     {/* Top Icon + Animated Telemetry Bars */}
                     <div className="flex items-center justify-between">
-                      <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)]">
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)]">
                         {meta.icon}
                       </div>
-                      <div className="flex items-end gap-1 h-4">
+                      <div className="hidden sm:flex items-end gap-1 h-4">
                         {meta.bars.map((height, bIdx) => (
                           <span
                             key={bIdx}
@@ -1003,7 +1054,7 @@ export default function ScrollHero({
                     </div>
 
                     {/* Rolling Odometer Metric */}
-                    <div className="text-3xl sm:text-4xl lg:text-[2.6rem] font-bold text-white font-mono leading-none tracking-tight">
+                    <div className="text-xl sm:text-4xl lg:text-[2.6rem] font-bold text-white font-mono leading-none tracking-tight">
                       <CountUp
                         key={`stat-${stat.label}-${act3RunId}`}
                         from={0}
