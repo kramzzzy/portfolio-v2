@@ -164,16 +164,22 @@ function bandOpacity(
 interface ScrollHeroProps {
   onOpenContact?: () => void
   isModalOpen?: boolean
+  isLoading?: boolean
+  onLoadProgress?: (loaded: number, total: number) => void
 }
 
 export default function ScrollHero({
   onOpenContact,
   isModalOpen = false,
+  isLoading = false,
+  onLoadProgress,
 }: ScrollHeroProps) {
   const { profile, services } = portfolioData
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const onLoadProgressRef = useRef(onLoadProgress)
+  onLoadProgressRef.current = onLoadProgress
   const imagesRef = useRef<(HTMLImageElement | null)[]>(
     new Array(TOTAL_FRAMES + 1).fill(null)
   )
@@ -190,11 +196,12 @@ export default function ScrollHero({
   })
 
   useEffect(() => {
-    engineRef.current.isModalOpen = isModalOpen
-    if (isModalOpen) {
+    const paused = isModalOpen || isLoading
+    engineRef.current.isModalOpen = paused
+    if (paused) {
       engineRef.current.lastInteractionTime = performance.now()
     }
-  }, [isModalOpen])
+  }, [isModalOpen, isLoading])
 
   const [progress, setProgress] = useState(0)
   const [loadedCount, setLoadedCount] = useState(0)
@@ -238,14 +245,16 @@ export default function ScrollHero({
         if (cancelled) return
         imagesRef.current[frameIdx] = img
         done += 1
-        if (done === 1 || done % 8 === 0 || done === order.length) {
+        if (done === 1 || done % 6 === 0 || done === order.length) {
           setLoadedCount(done)
+          onLoadProgressRef.current?.(done, order.length)
         }
         loadNext()
       }
       img.onerror = () => {
         if (cancelled) return
         done += 1
+        onLoadProgressRef.current?.(done, order.length)
         loadNext()
       }
     }
@@ -566,6 +575,7 @@ export default function ScrollHero({
                 {/* Bold Interactive TechText Name Wordmark */}
                 <div className="relative -ml-[5%] w-[105%] h-20 sm:h-24 lg:h-28">
                   <TechText
+                    key={isLoading ? 'loading' : 'ready'}
                     text="MARK ANTHONY EBIO"
                     fontWeight={800}
                     fontSize={92}

@@ -24,6 +24,7 @@ import {
   SiZapier,
 } from 'react-icons/si'
 import ContactModal from './components/ContactModal'
+import EntranceLoader from './components/EntranceLoader'
 import ScrollHero from './components/ScrollHero'
 import AnimatedContent from './components/react-bits/AnimatedContent'
 import LetterGlitch from './components/react-bits/LetterGlitch'
@@ -96,6 +97,8 @@ const STAR_VARIANTS = [
 
 export default function App() {
   const [contactOpen, setContactOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadedFrames, setLoadedFrames] = useState(0)
   const {
     profile,
     services,
@@ -310,9 +313,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <EntranceLoader
+        loadedFrames={loadedFrames}
+        targetFrames={120}
+        onComplete={() => setIsLoading(false)}
+      />
+
       <ScrollHero
         onOpenContact={() => setContactOpen(true)}
         isModalOpen={contactOpen}
+        isLoading={isLoading}
+        onLoadProgress={(loaded) => setLoadedFrames(loaded)}
       />
 
       <ContactModal
