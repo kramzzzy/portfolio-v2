@@ -20,6 +20,7 @@ export default function VideoTooltip({
   children,
 }: VideoTooltipProps) {
   const [open, setOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [aspectRatio, setAspectRatio] = useState('9 / 16')
   const [progress, setProgress] = useState(0)
@@ -36,6 +37,9 @@ export default function VideoTooltip({
   const updateOpen = useCallback(
     (next: boolean) => {
       setOpen(next)
+      if (!next) {
+        setExpanded(false)
+      }
       onOpenChange?.(next)
     },
     [onOpenChange]
@@ -48,7 +52,8 @@ export default function VideoTooltip({
     const rect = trigger.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
-    const tooltipWidth = vw < 640 ? 224 : 256 // w-56 (224px) or sm:w-64 (256px)
+    const tooltipWidth = vw < 640 ? 288 : 328 // w-72 (288px) or sm:w-[328px]
+    const estimatedHeight = Math.round(tooltipWidth * (16 / 9)) + 16
 
     let targetLeft = rect.left
     if (align === 'center') {
@@ -59,12 +64,13 @@ export default function VideoTooltip({
 
     const clampedLeft = Math.max(16, Math.min(vw - tooltipWidth - 16, targetLeft))
     const rawBottom = vh - rect.top + 14
-    const clampedBottom = Math.max(16, Math.min(vh - 470, rawBottom))
+    const maxBottom = Math.max(16, vh - estimatedHeight - 16)
+    const clampedBottom = Math.max(16, Math.min(maxBottom, rawBottom))
 
     const triggerCenter = rect.left + rect.width / 2
     const arrowLeft = Math.max(
-      20,
-      Math.min(tooltipWidth - 28, triggerCenter - clampedLeft - 6)
+      24,
+      Math.min(tooltipWidth - 32, triggerCenter - clampedLeft - 6)
     )
 
     setCoords({
@@ -83,7 +89,7 @@ export default function VideoTooltip({
   }
 
   useLayoutEffect(() => {
-    if (!open) return
+    if (!open || expanded) return
     updatePosition()
     window.addEventListener('scroll', updatePosition, { passive: true })
     window.addEventListener('resize', updatePosition)
@@ -91,7 +97,7 @@ export default function VideoTooltip({
       window.removeEventListener('scroll', updatePosition)
       window.removeEventListener('resize', updatePosition)
     }
-  }, [open, updatePosition])
+  }, [open, expanded, updatePosition])
 
   useEffect(() => {
     const video = videoRef.current
@@ -128,7 +134,11 @@ export default function VideoTooltip({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        updateOpen(false)
+        if (expanded) {
+          setExpanded(false)
+        } else {
+          updateOpen(false)
+        }
       }
     }
 
@@ -138,7 +148,7 @@ export default function VideoTooltip({
       document.removeEventListener('mousedown', handlePointerDown)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [open, updateOpen])
+  }, [open, expanded, updateOpen])
 
   return (
     <div ref={wrapperRef} className="relative inline-flex">
@@ -151,18 +161,35 @@ export default function VideoTooltip({
             ref={tooltipRef}
             role="dialog"
             aria-label="Sample Work Video Preview"
-            style={{
-              position: 'fixed',
-              left: `${coords.left}px`,
-              bottom: `${coords.bottom}px`,
-              zIndex: 9999,
-            }}
-            className="w-56 sm:w-64 rounded-2xl border border-[#0219EA]/65 bg-slate-950/75 p-1.5 backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_24px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(2,25,234,0.45)] select-none"
+            style={
+              expanded
+                ? {
+                    position: 'fixed',
+                    top: '2vh',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    height: '96vh',
+                    maxWidth: '94vw',
+                    aspectRatio,
+                    zIndex: 9999,
+                  }
+                : {
+                    position: 'fixed',
+                    left: `${coords.left}px`,
+                    bottom: `${coords.bottom}px`,
+                    zIndex: 9999,
+                  }
+            }
+            className={`${
+              expanded ? '' : 'w-72 sm:w-[328px]'
+            } rounded-2xl border border-[#0219EA]/65 bg-slate-950/75 p-1.5 backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_24px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(2,25,234,0.45)] select-none transition-all duration-300 ease-out`}
           >
             {/* Video Container Matched Strictly to Video Aspect Ratio (9:16 / 2160x3840) */}
             <div
-              style={{ aspectRatio }}
-              className="relative w-full overflow-hidden rounded-xl bg-neutral-950 border border-white/15"
+              style={expanded ? undefined : { aspectRatio }}
+              className={`relative w-full ${
+                expanded ? 'h-full' : ''
+              } overflow-hidden rounded-xl bg-neutral-950 border border-white/15`}
             >
               <video
                 ref={videoRef}
@@ -185,7 +212,7 @@ export default function VideoTooltip({
                 className="h-full w-full object-cover block"
               />
 
-              {/* Top Overlay Controls (Audio Toggle + Close) */}
+              {/* Top Overlay Controls (Audio Toggle + VH Fullscreen Toggle + Close) */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-auto">
                 <button
                   type="button"
@@ -227,14 +254,64 @@ export default function VideoTooltip({
                   )}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => updateOpen(false)}
-                  aria-label="Close video tooltip"
-                  className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-slate-950/65 text-xs text-white/80 backdrop-blur-md hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((prev) => !prev)}
+                    aria-label={
+                      expanded
+                        ? 'Restore tooltip size'
+                        : 'Expand to screen height'
+                    }
+                    title={
+                      expanded
+                        ? 'Restore size'
+                        : 'Fit to screen height (VH)'
+                    }
+                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-slate-950/65 text-white/85 backdrop-blur-md hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+                  >
+                    {expanded ? (
+                      <svg
+                        className="w-3.5 h-3.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="4 14 10 14 10 20" />
+                        <polyline points="20 10 14 10 14 4" />
+                        <line x1="14" y1="10" x2="21" y2="3" />
+                        <line x1="3" y1="21" x2="10" y2="14" />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-3.5 h-3.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="15 3 21 3 21 9" />
+                        <polyline points="9 21 3 21 3 15" />
+                        <line x1="21" y1="3" x2="14" y2="10" />
+                        <line x1="3" y1="21" x2="10" y2="14" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateOpen(false)}
+                    aria-label="Close video tooltip"
+                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-slate-950/65 text-xs text-white/80 backdrop-blur-md hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* Bottom Progress + Quick Action Overlay */}
@@ -260,11 +337,13 @@ export default function VideoTooltip({
               </div>
             </div>
 
-            {/* Tooltip Pointer Diamond */}
-            <div
-              style={{ left: `${coords.arrowLeft}px` }}
-              className="absolute -bottom-1.5 h-3 w-3 rotate-45 border-r border-b border-[#0219EA]/65 bg-slate-950/85 backdrop-blur-xl"
-            />
+            {/* Tooltip Pointer Diamond (hidden when expanded to full VH) */}
+            {!expanded && (
+              <div
+                style={{ left: `${coords.arrowLeft}px` }}
+                className="absolute -bottom-1.5 h-3 w-3 rotate-45 border-r border-b border-[#0219EA]/65 bg-slate-950/85 backdrop-blur-xl"
+              />
+            )}
           </div>,
           document.body
         )}
