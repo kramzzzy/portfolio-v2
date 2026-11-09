@@ -244,10 +244,13 @@ export default function ScrollHero({
   }>({ active: false, opacity: 0, percent: 0 })
   const [loopCycle, setLoopCycle] = useState(0)
 
+  const menuItems = MENU_ITEMS.map((item) =>
+    item.label === 'Contact' ? { ...item, onClick: onOpenContact } : item
+  )
+
   const socialItems = [
     { label: 'GitHub', link: profile.socials.github },
     { label: 'LinkedIn', link: profile.socials.linkedin },
-    { label: 'Email', link: `mailto:${profile.email}` },
     { label: 'Resume / CV', link: profile.cvUrl },
   ]
 
@@ -732,7 +735,7 @@ export default function ScrollHero({
       <StaggeredMenu
         isFixed={true}
         position="right"
-        items={MENU_ITEMS}
+        items={menuItems}
         socialItems={socialItems}
         displaySocials={true}
         displayItemNumbering={true}

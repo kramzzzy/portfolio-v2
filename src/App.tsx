@@ -23,6 +23,7 @@ import {
   SiVercel,
   SiZapier,
 } from 'react-icons/si'
+import CareerTrackAnimation from './components/CareerTrackAnimation'
 import ContactModal from './components/ContactModal'
 import EntranceLoader from './components/EntranceLoader'
 import ScrollHero from './components/ScrollHero'
@@ -215,13 +216,14 @@ export default function App() {
       colSpan: 2,
       rowSpan: 2,
       content: (
-        <div className="flex h-full flex-col justify-between gap-3">
+        <div className="flex h-full flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white">Career Track Record</h3>
             <span className="text-[11px] font-mono text-neutral-400">
               2016 — PRESENT
             </span>
           </div>
+          <CareerTrackAnimation />
           <div className="space-y-2 overflow-y-auto pr-1">
             {experience.map((e) => (
               <div
