@@ -203,12 +203,82 @@ const AnimatedContent = ({
         return;
       }
 
+      if (!once && stagger > 0 && targets.length > 1) {
+        gsap.set(targets, from);
+        targets.forEach((target, idx) => {
+          const slot = idx % 3;
+          const enterDelay = Math.max(delay, 0) + slot * stagger;
+          const exitDelay = (2 - slot) * (stagger * 0.85);
+          const exitUpVars: gsap.TweenVars = {
+            ...from,
+            [axis]: -distance * 0.55 * sign,
+            duration: duration * 0.65,
+            delay: exitDelay,
+            ease: 'power2.inOut',
+            overwrite: 'auto'
+          };
+          const exitDownVars: gsap.TweenVars = {
+            ...from,
+            duration: duration * 0.65,
+            delay: exitDelay,
+            ease: 'power2.inOut',
+            overwrite: 'auto'
+          };
+
+          ScrollTrigger.create({
+            trigger: target,
+            scroller,
+            start,
+            end: 'bottom 8%',
+            onEnter: () => {
+              gsap.to(target, {
+                ...to,
+                delay: enterDelay,
+                overwrite: 'auto',
+                onComplete: () => {
+                  gsap.set(target, {
+                    clearProps: mask ? 'filter,transform,maskImage,webkitMaskImage' : 'filter,transform'
+                  });
+                }
+              });
+            },
+            onLeave: () => {
+              gsap.to(target, exitUpVars);
+            },
+            onEnterBack: () => {
+              gsap.to(target, {
+                ...to,
+                delay: slot * (stagger * 0.85),
+                overwrite: 'auto',
+                onComplete: () => {
+                  gsap.set(target, {
+                    clearProps: mask ? 'filter,transform,maskImage,webkitMaskImage' : 'filter,transform'
+                  });
+                }
+              });
+            },
+            onLeaveBack: () => {
+              gsap.to(target, exitDownVars);
+            }
+          });
+        });
+        return;
+      }
+
       ScrollTrigger.create({
         trigger: el,
         scroller,
         start,
+        end: 'bottom 10%',
         once,
         onEnter: () => tl.play(),
+        onLeave: once
+          ? undefined
+          : () => {
+              if (mask) gsap.set(targets, { maskImage: mask, webkitMaskImage: mask });
+              tl.reverse();
+            },
+        onEnterBack: once ? undefined : () => tl.play(),
         onLeaveBack: once
           ? undefined
           : () => {

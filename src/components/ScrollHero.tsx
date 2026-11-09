@@ -144,6 +144,11 @@ const MENU_ITEMS = [
   { label: 'Contact', ariaLabel: 'Get in touch with Mark Anthony Ebio', link: '#contact' },
 ]
 
+function smooth01(t: number) {
+  const c = Math.min(1, Math.max(0, t))
+  return c * c * (3 - 2 * c)
+}
+
 function bandOpacity(
   progress: number,
   enterStart: number,
@@ -153,12 +158,35 @@ function bandOpacity(
 ) {
   if (progress < enterStart || progress > exitEnd) return 0
   if (progress < enterEnd) {
-    return (progress - enterStart) / Math.max(0.001, enterEnd - enterStart)
+    return smooth01((progress - enterStart) / Math.max(0.001, enterEnd - enterStart))
   }
   if (progress > exitStart) {
-    return 1 - (progress - exitStart) / Math.max(0.001, exitEnd - exitStart)
+    return smooth01(1 - (progress - exitStart) / Math.max(0.001, exitEnd - exitStart))
   }
   return 1
+}
+
+function itemStageStyle(
+  progress: number,
+  enterStart: number,
+  enterEnd: number,
+  exitStart: number,
+  exitEnd: number,
+  enterY = 26,
+  exitY = -22
+) {
+  const op = bandOpacity(progress, enterStart, enterEnd, exitStart, exitEnd)
+  const isExiting = progress > exitStart
+  const y = isExiting ? (1 - op) * exitY : (1 - op) * enterY
+  const scale = 0.96 + 0.04 * op
+  return {
+    opacity: op,
+    style: {
+      opacity: op,
+      transform: `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`,
+      pointerEvents: (op > 0.2 ? 'auto' : 'none') as 'auto' | 'none',
+    },
+  }
 }
 
 interface ScrollHeroProps {
@@ -582,22 +610,91 @@ export default function ScrollHero({
     })
   }
 
-  // Opacity envelopes for the 3 acts
+  // Opacity envelopes for the 3 acts (container bounds) + per-item staggered show/out
   const act1Opacity =
-    progress <= 0.26
+    progress <= 0.19
       ? 1
-      : Math.max(0, 1 - (progress - 0.26) / (0.35 - 0.26))
-  const act2Opacity = bandOpacity(progress, 0.31, 0.39, 0.62, 0.7)
+      : Math.max(0, 1 - (progress - 0.19) / (0.37 - 0.19))
+  const act2Opacity = bandOpacity(progress, 0.28, 0.34, 0.68, 0.74)
   const act3Opacity =
-    progress < 0.66
+    progress < 0.64
       ? 0
-      : Math.min(1, (progress - 0.66) / (0.75 - 0.66))
+      : Math.min(1, (progress - 0.64) / (0.71 - 0.64))
 
   // Smooth scroll-exit envelope (84% -> 100% of hero scroll) for seamless handoff into MagicRings
   const scrollExitProgress = Math.max(
     0,
     Math.min(1, (scrollProgress - 0.84) / 0.16)
   )
+
+  // Staggered initial/loop entrance for Act I items so they don't all pop in at once
+  const [act1Entered, setAct1Entered] = useState(false)
+  useEffect(() => {
+    if (isLoading) {
+      setAct1Entered(false)
+      return
+    }
+    setAct1Entered(false)
+    const id = window.requestAnimationFrame(() => {
+      setAct1Entered(true)
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [isLoading, loopCycle])
+
+  const getAct1ItemStyle = (idx: number, totalItems = 6) => {
+    const exitStart = 0.20 + idx * 0.02
+    const exitEnd = exitStart + 0.065
+    const exitOp =
+      progress <= exitStart
+        ? 1
+        : smooth01(1 - (progress - exitStart) / (exitEnd - exitStart))
+    const shown = act1Entered ? exitOp : 0
+    const yOffset = !act1Entered ? 26 : (1 - exitOp) * -22
+    const scale = 0.96 + 0.04 * shown
+    const delayMs = progress <= 0.18 ? idx * 120 : (totalItems - 1 - idx) * 35
+    return {
+      opacity: shown,
+      transform: `translate3d(0, ${yOffset.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`,
+      transition:
+        progress <= 0.18
+          ? `opacity 520ms cubic-bezier(0.22,1,0.36,1) ${delayMs}ms, transform 520ms cubic-bezier(0.22,1,0.36,1) ${delayMs}ms`
+          : 'none',
+      pointerEvents: (shown > 0.2 ? 'auto' : 'none') as 'auto' | 'none',
+    }
+  }
+
+  const getAct3ItemStyle = (idx: number) => {
+    // Staggered entrance (0.65 -> 0.83) and staggered scroll-exit (scrollExitProgress 0.0 -> 0.96)
+    const enterStart = 0.65 + idx * 0.028
+    const enterEnd = enterStart + 0.058
+    const enterOp =
+      progress <= enterStart
+        ? 0
+        : progress >= enterEnd
+          ? 1
+          : smooth01((progress - enterStart) / (enterEnd - enterStart))
+
+    const exitStart = idx * 0.11
+    const exitEnd = Math.min(1, exitStart + 0.56)
+    const scrollExitOp =
+      scrollExitProgress <= exitStart
+        ? 1
+        : scrollExitProgress >= exitEnd
+          ? 0
+          : smooth01(1 - (scrollExitProgress - exitStart) / (exitEnd - exitStart))
+
+    const op = enterOp * scrollExitOp
+    const y = (1 - enterOp) * 28 + (1 - scrollExitOp) * -24
+    const scale = 0.96 + 0.04 * op
+    return {
+      opacity: op,
+      style: {
+        opacity: op,
+        transform: `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`,
+        pointerEvents: (op > 0.2 ? 'auto' : 'none') as 'auto' | 'none',
+      },
+    }
+  }
 
   const isAct2Active = act2Opacity > 0.12
   const [act2RunId, setAct2RunId] = useState(0)
@@ -663,7 +760,11 @@ export default function ScrollHero({
               scrollExitProgress > 0.001
                 ? `scale(${1 + scrollExitProgress * 0.045})`
                 : undefined,
-            opacity: 1 - scrollExitProgress * 0.45,
+            opacity: 1 - scrollExitProgress * 0.55,
+            WebkitMaskImage:
+              'linear-gradient(to bottom, #000 0%, #000 76%, transparent 98%)',
+            maskImage:
+              'linear-gradient(to bottom, #000 0%, #000 76%, transparent 98%)',
           }}
           className="absolute inset-0 h-full w-full block object-cover transition-transform duration-75 ease-out"
         />
@@ -673,26 +774,11 @@ export default function ScrollHero({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'radial-gradient(circle at 50% 42%, transparent 28%, rgba(5, 8, 15, 0.52) 78%, rgba(5, 8, 15, 0.88) 100%)',
+              'radial-gradient(circle at 50% 42%, transparent 28%, rgba(5, 8, 15, 0.52) 78%, rgba(5, 8, 15, 0.92) 100%)',
           }}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-neutral-950 via-neutral-950/85 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-neutral-950/60 to-transparent" />
-
-        {/* Emerging Energy Horizon on Scroll-Down Handoff */}
-        <div
-          aria-hidden="true"
-          style={{ opacity: 0.25 + scrollExitProgress * 0.75 }}
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-72"
-        >
-          <div
-            className="h-full w-full"
-            style={{
-              background:
-                'radial-gradient(ellipse 68% 90% at 50% 100%, rgba(2, 25, 234, 0.32) 0%, rgba(59, 85, 255, 0.12) 45%, transparent 78%)',
-            }}
-          />
-        </div>
 
         {/* Seamless Loop-End Reboot Loading Overlay */}
         {loopResetState.active && (
@@ -740,9 +826,8 @@ export default function ScrollHero({
            ============================================================ */}
         <div
           style={{
-            opacity: act1Opacity,
-            transform: `translate3d(0, ${(1 - act1Opacity) * -24}px, 0)`,
-            pointerEvents: act1Opacity > 0.15 ? 'auto' : 'none',
+            visibility: act1Opacity > 0.01 ? 'visible' : 'hidden',
+            pointerEvents: act1Opacity > 0.1 ? 'auto' : 'none',
           }}
           className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-12 flex flex-col justify-end"
         >
@@ -750,8 +835,11 @@ export default function ScrollHero({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-end">
             <div className="lg:col-span-7 space-y-3 sm:space-y-4">
               <div className="space-y-1">
-                {/* Bold Interactive TechText Name Wordmark */}
-                <div className="relative -ml-[5%] w-[105%] h-14 sm:h-24 lg:h-28">
+                {/* Bold Interactive TechText Name Wordmark (Stagger Slot 0) */}
+                <div
+                  style={getAct1ItemStyle(0)}
+                  className="relative -ml-[5%] w-[105%] h-14 sm:h-24 lg:h-28"
+                >
                   <TechText
                     key={isLoading ? 'loading' : `ready-${loopCycle}`}
                     text="MARK ANTHONY EBIO"
@@ -775,7 +863,11 @@ export default function ScrollHero({
                   />
                 </div>
 
-                <div className="border-l-2 border-[#0219EA] pl-4 sm:pl-5 space-y-3">
+                {/* Heading, Bio & CTAs Block (Stagger Slot 1) */}
+                <div
+                  style={getAct1ItemStyle(1)}
+                  className="border-l-2 border-[#0219EA] pl-4 sm:pl-5 space-y-3"
+                >
                   <h1 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-bold tracking-tight text-white leading-[1.2] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
                     <span className="block text-white">Autonomous</span>
                     <RotatingText
@@ -906,59 +998,64 @@ export default function ScrollHero({
               </div>
             </div>
 
-            {/* Right 2x2 Interactive Glass Bento Tiles */}
+            {/* Right 2x2 Interactive Glass Bento Tiles (Stagger Slots 2..5) */}
             <div className="lg:col-span-5 grid grid-cols-2 gap-3">
               {services.map((svc, idx) => {
                 const meta = CAPABILITY_META[idx % CAPABILITY_META.length]
                 return (
-                  <SpotlightCard
+                  <div
                     key={svc.id}
-                    spotlightColor={meta.accent}
-                    intensity={0.32}
-                    borderGlow={0.95}
-                    onClick={() => jumpToProgress(0.5)}
-                    data-crosshair-target
-                    className="group !p-4 !rounded-2xl border border-white/15 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 flex flex-col justify-between gap-3"
+                    style={getAct1ItemStyle(idx + 2)}
+                    className="flex"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)] group-hover:border-[#0219EA] group-hover:bg-[#0219EA]/40 transition-colors">
-                        {meta.icon}
+                    <SpotlightCard
+                      spotlightColor={meta.accent}
+                      intensity={0.32}
+                      borderGlow={0.95}
+                      onClick={() => jumpToProgress(0.5)}
+                      data-crosshair-target
+                      className="group w-full !p-4 !rounded-2xl border border-white/15 cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 flex flex-col justify-between gap-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="h-8 w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)] group-hover:border-[#0219EA] group-hover:bg-[#0219EA]/40 transition-colors">
+                          {meta.icon}
+                        </div>
+                        <span className="text-[11px] font-mono text-white/45 group-hover:text-[#4f6bff] transition-colors">
+                          0{idx + 1} ↗
+                        </span>
                       </div>
-                      <span className="text-[11px] font-mono text-white/45 group-hover:text-[#4f6bff] transition-colors">
-                        0{idx + 1} ↗
-                      </span>
-                    </div>
 
-                    <div className="space-y-1">
-                      <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug group-hover:text-blue-100 transition-colors">
-                        <DecryptedText
-                          text={svc.label}
-                          animateOn="view"
-                          loop={true}
-                          loopDelay={3400 + idx * 800}
-                          speed={38}
-                          sequential
-                          revealDirection="start"
-                          scrambleColor="#0219EA"
-                        />
-                      </h3>
-                      <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
-                        <TextType
-                          as="div"
-                          text={[...meta.phrases]}
-                          typingSpeed={36}
-                          deletingSpeed={22}
-                          pauseDuration={1900 + idx * 350}
-                          initialDelay={idx * 250}
-                          loop={true}
-                          showCursor={true}
-                          cursorStyle="block"
-                          cursorColor="#0219EA"
-                          className="truncate text-[#4f6bff]"
-                        />
+                      <div className="space-y-1">
+                        <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug group-hover:text-blue-100 transition-colors">
+                          <DecryptedText
+                            text={svc.label}
+                            animateOn="view"
+                            loop={true}
+                            loopDelay={3400 + idx * 800}
+                            speed={38}
+                            sequential
+                            revealDirection="start"
+                            scrambleColor="#0219EA"
+                          />
+                        </h3>
+                        <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                          <TextType
+                            as="div"
+                            text={[...meta.phrases]}
+                            typingSpeed={36}
+                            deletingSpeed={22}
+                            pauseDuration={1900 + idx * 350}
+                            initialDelay={idx * 250}
+                            loop={true}
+                            showCursor={true}
+                            cursorStyle="block"
+                            cursorColor="#0219EA"
+                            className="truncate text-[#4f6bff]"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </SpotlightCard>
+                    </SpotlightCard>
+                  </div>
                 )
               })}
             </div>
@@ -970,14 +1067,16 @@ export default function ScrollHero({
            ============================================================ */}
         <div
           style={{
-            opacity: act2Opacity,
-            transform: `translate3d(0, ${(1 - act2Opacity) * 20}px, 0)`,
-            pointerEvents: act2Opacity > 0.15 ? 'auto' : 'none',
+            visibility: act2Opacity > 0.01 ? 'visible' : 'hidden',
+            pointerEvents: act2Opacity > 0.1 ? 'auto' : 'none',
           }}
           className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20 flex flex-col justify-between"
         >
-          {/* Top Center Command Header */}
-          <div className="text-center max-w-xl mx-auto">
+          {/* Top Center Command Header (Enters & Exits First) */}
+          <div
+            style={itemStageStyle(progress, 0.285, 0.345, 0.585, 0.645).style}
+            className="text-center max-w-xl mx-auto"
+          >
             <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
               Orchestrating AI Agents, APIs &amp; Full-Stack Web Systems
             </h2>
@@ -986,144 +1085,168 @@ export default function ScrollHero({
           {/* Left & Right Wing Terminal Panels framing Mark's back at the console */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
             <div className="md:col-span-5 space-y-3">
-              {services.slice(0, 2).map((svc, idx) => (
-                <SpotlightCard
-                  key={svc.id}
-                  spotlightColor="#0219EA"
-                  intensity={0.32}
-                  borderGlow={0.95}
-                  className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
-                >
-                  {/* Terminal Window Chrome */}
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-                    </div>
-                    <span className="text-[11px] text-[#4f6bff]">
-                      {TERMINAL_FILES[idx]}
-                    </span>
-                  </div>
-
-                  {/* Terminal Command Header */}
-                  <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
-                    <span className="text-[#0219EA] select-none">$</span>
-                    {isAct2Active ? (
-                      <DecryptedText
-                        key={`cmd-${svc.id}-${act2RunId}`}
-                        text={svc.label}
-                        animateOn="view"
-                        speed={35}
-                        sequential
-                        revealDirection="start"
-                        scrambleColor="#0219EA"
-                      />
-                    ) : (
-                      <span>{svc.label}</span>
-                    )}
-                  </div>
-
-                  {/* Terminal Streaming Output */}
-                  <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
-                    <div
-                      aria-hidden="true"
-                      className="invisible select-none pointer-events-none"
+              {services.slice(0, 2).map((svc, idx) => {
+                const orderIdx = idx * 2 // 0, 2
+                const stage = itemStageStyle(
+                  progress,
+                  0.31 + orderIdx * 0.028,
+                  0.37 + orderIdx * 0.028,
+                  0.595 + orderIdx * 0.024,
+                  0.655 + orderIdx * 0.024
+                )
+                const cardActive = stage.opacity > 0.12
+                return (
+                  <div key={svc.id} style={stage.style}>
+                    <SpotlightCard
+                      spotlightColor="#0219EA"
+                      intensity={0.32}
+                      borderGlow={0.95}
+                      className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
                     >
-                      &gt; {svc.description}
-                    </div>
-                    {isAct2Active && (
-                      <TextType
-                        key={`out-${svc.id}-${act2RunId}`}
-                        as="div"
-                        text={svc.description}
-                        prefix="> "
-                        prefixColor="#0219EA"
-                        typingSpeed={13}
-                        initialDelay={180 + idx * 220}
-                        loop={false}
-                        showCursor={true}
-                        cursorStyle="block"
-                        cursorColor="#0219EA"
-                        cursorBlinkDuration={0.55}
-                        className="absolute inset-0 text-blue-50/90"
-                      />
-                    )}
+                      {/* Terminal Window Chrome */}
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                        </div>
+                        <span className="text-[11px] text-[#4f6bff]">
+                          {TERMINAL_FILES[idx]}
+                        </span>
+                      </div>
+
+                      {/* Terminal Command Header */}
+                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                        <span className="text-[#0219EA] select-none">$</span>
+                        {cardActive ? (
+                          <DecryptedText
+                            key={`cmd-${svc.id}-${act2RunId}`}
+                            text={svc.label}
+                            animateOn="view"
+                            speed={35}
+                            sequential
+                            revealDirection="start"
+                            scrambleColor="#0219EA"
+                          />
+                        ) : (
+                          <span>{svc.label}</span>
+                        )}
+                      </div>
+
+                      {/* Terminal Streaming Output */}
+                      <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                        <div
+                          aria-hidden="true"
+                          className="invisible select-none pointer-events-none"
+                        >
+                          &gt; {svc.description}
+                        </div>
+                        {cardActive && (
+                          <TextType
+                            key={`out-${svc.id}-${act2RunId}`}
+                            as="div"
+                            text={svc.description}
+                            prefix="> "
+                            prefixColor="#0219EA"
+                            typingSpeed={13}
+                            initialDelay={120}
+                            loop={false}
+                            showCursor={true}
+                            cursorStyle="block"
+                            cursorColor="#0219EA"
+                            cursorBlinkDuration={0.55}
+                            className="absolute inset-0 text-blue-50/90"
+                          />
+                        )}
+                      </div>
+                    </SpotlightCard>
                   </div>
-                </SpotlightCard>
-              ))}
+                )
+              })}
             </div>
 
             {/* Center Spacer keeps Mark's glowing circuit jacket unobstructed */}
             <div className="hidden md:block md:col-span-2" />
 
             <div className="md:col-span-5 space-y-3">
-              {services.slice(2, 4).map((svc, idx) => (
-                <SpotlightCard
-                  key={svc.id}
-                  spotlightColor="#0219EA"
-                  intensity={0.32}
-                  borderGlow={0.95}
-                  className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
-                >
-                  {/* Terminal Window Chrome */}
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-                    </div>
-                    <span className="text-[11px] text-[#4f6bff]">
-                      {TERMINAL_FILES[idx + 2]}
-                    </span>
-                  </div>
-
-                  {/* Terminal Command Header */}
-                  <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
-                    <span className="text-[#0219EA] select-none">$</span>
-                    {isAct2Active ? (
-                      <DecryptedText
-                        key={`cmd-${svc.id}-${act2RunId}`}
-                        text={svc.label}
-                        animateOn="view"
-                        speed={35}
-                        sequential
-                        revealDirection="start"
-                        scrambleColor="#0219EA"
-                      />
-                    ) : (
-                      <span>{svc.label}</span>
-                    )}
-                  </div>
-
-                  {/* Terminal Streaming Output */}
-                  <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
-                    <div
-                      aria-hidden="true"
-                      className="invisible select-none pointer-events-none"
+              {services.slice(2, 4).map((svc, idx) => {
+                const orderIdx = idx * 2 + 1 // 1, 3
+                const stage = itemStageStyle(
+                  progress,
+                  0.31 + orderIdx * 0.028,
+                  0.37 + orderIdx * 0.028,
+                  0.595 + orderIdx * 0.024,
+                  0.655 + orderIdx * 0.024
+                )
+                const cardActive = stage.opacity > 0.12
+                return (
+                  <div key={svc.id} style={stage.style}>
+                    <SpotlightCard
+                      spotlightColor="#0219EA"
+                      intensity={0.32}
+                      borderGlow={0.95}
+                      className="!p-4 sm:!p-5 !rounded-2xl border border-[#0219EA]/45 font-mono"
                     >
-                      &gt; {svc.description}
-                    </div>
-                    {isAct2Active && (
-                      <TextType
-                        key={`out-${svc.id}-${act2RunId}`}
-                        as="div"
-                        text={svc.description}
-                        prefix="> "
-                        prefixColor="#0219EA"
-                        typingSpeed={13}
-                        initialDelay={320 + idx * 220}
-                        loop={false}
-                        showCursor={true}
-                        cursorStyle="block"
-                        cursorColor="#0219EA"
-                        cursorBlinkDuration={0.55}
-                        className="absolute inset-0 text-blue-50/90"
-                      />
-                    )}
+                      {/* Terminal Window Chrome */}
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                        </div>
+                        <span className="text-[11px] text-[#4f6bff]">
+                          {TERMINAL_FILES[idx + 2]}
+                        </span>
+                      </div>
+
+                      {/* Terminal Command Header */}
+                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                        <span className="text-[#0219EA] select-none">$</span>
+                        {cardActive ? (
+                          <DecryptedText
+                            key={`cmd-${svc.id}-${act2RunId}`}
+                            text={svc.label}
+                            animateOn="view"
+                            speed={35}
+                            sequential
+                            revealDirection="start"
+                            scrambleColor="#0219EA"
+                          />
+                        ) : (
+                          <span>{svc.label}</span>
+                        )}
+                      </div>
+
+                      {/* Terminal Streaming Output */}
+                      <div className="relative mt-1.5 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
+                        <div
+                          aria-hidden="true"
+                          className="invisible select-none pointer-events-none"
+                        >
+                          &gt; {svc.description}
+                        </div>
+                        {cardActive && (
+                          <TextType
+                            key={`out-${svc.id}-${act2RunId}`}
+                            as="div"
+                            text={svc.description}
+                            prefix="> "
+                            prefixColor="#0219EA"
+                            typingSpeed={13}
+                            initialDelay={120}
+                            loop={false}
+                            showCursor={true}
+                            cursorStyle="block"
+                            cursorColor="#0219EA"
+                            cursorBlinkDuration={0.55}
+                            className="absolute inset-0 text-blue-50/90"
+                          />
+                        )}
+                      </div>
+                    </SpotlightCard>
                   </div>
-                </SpotlightCard>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -1133,101 +1256,114 @@ export default function ScrollHero({
            ============================================================ */}
         <div
           style={{
-            opacity: act3Opacity,
-            transform: `translate3d(0, ${(1 - act3Opacity) * 24}px, 0)`,
-            pointerEvents: act3Opacity > 0.15 ? 'auto' : 'none',
+            visibility: act3Opacity > 0.01 ? 'visible' : 'hidden',
+            pointerEvents: act3Opacity > 0.1 ? 'auto' : 'none',
           }}
           className="absolute inset-0 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10 flex flex-col justify-between"
         >
-          {/* Top-Left Heading leaving center globe & right side 100% clear */}
-          <div>
+          {/* Top-Left Heading leaving center globe & right side 100% clear (Stagger Slot 0) */}
+          <div style={getAct3ItemStyle(0).style}>
             <h2 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
               Built for Global Production Scale
             </h2>
           </div>
 
-          {/* Bottom Metrics + Conversion Bar */}
+          {/* Bottom Metrics + Conversion Bar (Stagger Slots 1..4) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-stretch">
             <div className="lg:col-span-8 grid grid-cols-3 gap-2 sm:gap-4">
               {profile.stats.map((stat, idx) => {
                 const meta = STAT_META[idx % STAT_META.length]
+                const cardStage = getAct3ItemStyle(idx + 1)
+                const statActive = cardStage.opacity > 0.15
                 return (
-                  <SpotlightCard
+                  <div
                     key={stat.label}
-                    spotlightColor="#0219EA"
-                    intensity={0.32}
-                    borderGlow={0.95}
-                    data-crosshair-target
-                    className="group !p-3 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-2 sm:gap-3 transition-transform duration-300 hover:-translate-y-0.5"
+                    style={cardStage.style}
+                    className="flex"
                   >
-                    {/* Top Icon + Animated Telemetry Bars */}
-                    <div className="flex items-center justify-between">
-                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)]">
-                        {meta.icon}
+                    <SpotlightCard
+                      spotlightColor="#0219EA"
+                      intensity={0.32}
+                      borderGlow={0.95}
+                      data-crosshair-target
+                      className="group w-full !p-3 sm:!p-5 !rounded-2xl border border-white/15 flex flex-col justify-between gap-2 sm:gap-3 transition-transform duration-300 hover:-translate-y-0.5"
+                    >
+                      {/* Top Icon + Animated Telemetry Bars */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl border border-[#0219EA]/55 bg-[#0219EA]/25 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_16px_rgba(2,25,234,0.35)]">
+                          {meta.icon}
+                        </div>
+                        <div className="hidden sm:flex items-end gap-1 h-4">
+                          {meta.bars.map((height, bIdx) => (
+                            <span
+                              key={bIdx}
+                              className="w-1 rounded-full bg-[#0219EA] shadow-[0_0_8px_rgba(2,25,234,0.8)] animate-pulse"
+                              style={{
+                                height: `${statActive ? height : 25}%`,
+                                animationDelay: `${(idx * 3 + bIdx) * 160}ms`,
+                                animationDuration: '1.6s',
+                              }}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="hidden sm:flex items-end gap-1 h-4">
-                        {meta.bars.map((height, bIdx) => (
-                          <span
-                            key={bIdx}
-                            className="w-1 rounded-full bg-[#0219EA] shadow-[0_0_8px_rgba(2,25,234,0.8)] animate-pulse"
-                            style={{
-                              height: `${isAct3Active ? height : 25}%`,
-                              animationDelay: `${(idx * 3 + bIdx) * 160}ms`,
-                              animationDuration: '1.6s',
-                            }}
+
+                      {/* Rolling Odometer Metric (Triggers per-card as it staggers in) */}
+                      <div className="text-xl sm:text-4xl lg:text-[2.6rem] font-bold text-white font-mono leading-none tracking-tight">
+                        {statActive ? (
+                          <CountUp
+                            key={`stat-${stat.label}-${act3RunId}`}
+                            from={0}
+                            to={stat.value}
+                            suffix={stat.suffix}
+                            duration={1.8}
+                            mode="roll"
                           />
-                        ))}
+                        ) : (
+                          <span>0{stat.suffix}</span>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Rolling Odometer Metric */}
-                    <div className="text-xl sm:text-4xl lg:text-[2.6rem] font-bold text-white font-mono leading-none tracking-tight">
-                      <CountUp
-                        key={`stat-${stat.label}-${act3RunId}`}
-                        from={0}
-                        to={stat.value}
-                        suffix={stat.suffix}
-                        duration={1.8}
-                        mode="roll"
-                      />
-                    </div>
-
-                    {/* Continuous Decrypted Title + Streaming Sub-line */}
-                    <div className="space-y-1 border-t border-white/10 pt-2.5">
-                      <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug">
-                        <DecryptedText
-                          text={stat.label}
-                          animateOn="view"
-                          loop={true}
-                          loopDelay={3200 + idx * 750}
-                          speed={36}
-                          sequential
-                          revealDirection="start"
-                          scrambleColor="#0219EA"
-                        />
-                      </h3>
-                      <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
-                        <TextType
-                          as="div"
-                          text={[...meta.phrases]}
-                          typingSpeed={34}
-                          deletingSpeed={20}
-                          pauseDuration={1800 + idx * 300}
-                          initialDelay={idx * 220}
-                          loop={true}
-                          showCursor={true}
-                          cursorStyle="block"
-                          cursorColor="#0219EA"
-                          className="truncate text-[#4f6bff]"
-                        />
+                      {/* Continuous Decrypted Title + Streaming Sub-line */}
+                      <div className="space-y-1 border-t border-white/10 pt-2.5">
+                        <h3 className="text-xs sm:text-[13px] font-semibold text-white leading-snug">
+                          <DecryptedText
+                            text={stat.label}
+                            animateOn="view"
+                            loop={true}
+                            loopDelay={3200 + idx * 750}
+                            speed={36}
+                            sequential
+                            revealDirection="start"
+                            scrambleColor="#0219EA"
+                          />
+                        </h3>
+                        <div className="text-[11px] font-mono text-[#4f6bff] h-4 overflow-hidden">
+                          <TextType
+                            as="div"
+                            text={[...meta.phrases]}
+                            typingSpeed={34}
+                            deletingSpeed={20}
+                            pauseDuration={1800 + idx * 300}
+                            initialDelay={idx * 220}
+                            loop={true}
+                            showCursor={true}
+                            cursorStyle="block"
+                            cursorColor="#0219EA"
+                            className="truncate text-[#4f6bff]"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </SpotlightCard>
+                    </SpotlightCard>
+                  </div>
                 )
               })}
             </div>
 
-            <div className="lg:col-span-4 flex">
+            <div
+              style={getAct3ItemStyle(4).style}
+              className="lg:col-span-4 flex"
+            >
               <SpotlightCard
                 spotlightColor="#0219EA"
                 intensity={0.32}

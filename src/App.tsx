@@ -336,14 +336,14 @@ export default function App() {
       />
 
       {/* Top Section: Seamless Hero-to-MagicRings Emergence + LogoLoop + About Bento Grid */}
-      <div className="relative isolate z-20 -mt-28 pt-28 sm:-mt-40 sm:pt-40 w-full overflow-hidden">
+      <div className="relative isolate z-20 -mt-12 pt-16 sm:-mt-16 sm:pt-24 w-full overflow-hidden">
         <div
           aria-hidden="true"
           style={{
             WebkitMaskImage:
-              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 11%, #000 24%, #000 84%, transparent 100%)',
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 14%, #000 30%, #000 84%, transparent 100%)',
             maskImage:
-              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 11%, #000 24%, #000 84%, transparent 100%)',
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 14%, #000 30%, #000 84%, transparent 100%)',
           }}
           className="pointer-events-none absolute inset-0 z-0"
         >
@@ -368,9 +368,10 @@ export default function App() {
           <AnimatedContent
             distance={50}
             direction="vertical"
-            duration={0.8}
+            duration={0.75}
+            delay={0.04}
             ease="power3.out"
-            threshold={0.1}
+            threshold={0.16}
             trigger="scroll"
             once={false}
           >
@@ -400,8 +401,9 @@ export default function App() {
                 distance={45}
                 direction="vertical"
                 duration={0.75}
+                delay={0.16}
                 ease="power3.out"
-                threshold={0.15}
+                threshold={0.2}
                 trigger="scroll"
                 once={false}
               >
@@ -413,12 +415,13 @@ export default function App() {
               </AnimatedContent>
 
               <AnimatedContent
-                distance={90}
+                distance={85}
                 direction="vertical"
-                duration={0.85}
+                duration={0.8}
+                delay={0.26}
                 ease="power3.out"
-                stagger={0.09}
-                threshold={0.12}
+                stagger={0.14}
+                threshold={0.18}
                 trigger="scroll"
                 once={false}
               >
