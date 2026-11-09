@@ -339,9 +339,20 @@ export default function VideoTooltip({
                     type="button"
                     onClick={() => updateOpen(false)}
                     aria-label="Close video tooltip"
-                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-slate-950/65 text-xs text-white/80 backdrop-blur-md hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+                    className="flex h-6 w-6 items-center justify-center text-neutral-300 hover:text-red-500 transition-colors cursor-pointer"
                   >
-                    ✕
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
                   </button>
                 </div>
               </div>

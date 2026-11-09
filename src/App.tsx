@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   SiAnthropic,
   SiClaude,
@@ -32,7 +32,10 @@ import {
 import CareerTrackAnimation from './components/CareerTrackAnimation'
 import ContactModal from './components/ContactModal'
 import EntranceLoader from './components/EntranceLoader'
+import ProjectCaseStudyPage from './components/ProjectCaseStudyPage'
+import ProjectsArchivePage from './components/ProjectsArchivePage'
 import ScrollHero from './components/ScrollHero'
+import SoftwareDevelopmentPage from './components/SoftwareDevelopmentPage'
 import AnimatedContent from './components/react-bits/AnimatedContent'
 import LetterGlitch from './components/react-bits/LetterGlitch'
 import LogoLoop, { type LogoItem } from './components/react-bits/LogoLoop'
@@ -102,9 +105,42 @@ const STAR_VARIANTS = [
   },
 ] as const
 
+function resolveProjectIndexFromPath(): number | null {
+  if (typeof window === 'undefined') return null
+  const match = window.location.pathname.match(/^\/case-study\/([^/]+)\/?$/)
+  if (!match) return null
+  const slug = decodeURIComponent(match[1])
+  const idx = portfolioData.projects.findIndex((p) => p.slug === slug)
+  return idx >= 0 ? idx : null
+}
+
+function isProjectsArchivePath(): boolean {
+  if (typeof window === 'undefined') return false
+  return /^\/projects\/?$/.test(window.location.pathname)
+}
+
+function isSoftwareDevPath(): boolean {
+  if (typeof window === 'undefined') return false
+  return /^\/software\/?$/.test(window.location.pathname)
+}
+
 export default function App() {
   const [contactOpen, setContactOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [activeProjectIndex, setActiveProjectIndex] = useState<number | null>(() =>
+    resolveProjectIndexFromPath()
+  )
+  const [projectsPageOpen, setProjectsPageOpen] = useState<boolean>(() =>
+    isProjectsArchivePath()
+  )
+  const [softwarePageOpen, setSoftwarePageOpen] = useState<boolean>(() =>
+    isSoftwareDevPath()
+  )
+  const [isLoading, setIsLoading] = useState(
+    () =>
+      resolveProjectIndexFromPath() === null &&
+      !isProjectsArchivePath() &&
+      !isSoftwareDevPath()
+  )
   const [loadedFrames, setLoadedFrames] = useState(0)
   const [totalFrames, setTotalFrames] = useState(180)
   const {
@@ -116,6 +152,62 @@ export default function App() {
     coreCompetencies,
     skillMetrics,
   } = portfolioData
+  const isSubPageOpen =
+    activeProjectIndex !== null || projectsPageOpen || softwarePageOpen
+  const isAnyModalOpen = contactOpen || isSubPageOpen
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveProjectIndex(resolveProjectIndexFromPath())
+      setProjectsPageOpen(isProjectsArchivePath())
+      setSoftwarePageOpen(isSoftwareDevPath())
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const openCaseStudy = (idx: number) => {
+    const target = projects[idx]
+    if (!target) return
+    const nextUrl = `/case-study/${target.slug}`
+    if (window.location.pathname !== nextUrl) {
+      window.history.pushState({ projectIdx: idx }, '', nextUrl)
+    }
+    setProjectsPageOpen(false)
+    setSoftwarePageOpen(false)
+    setActiveProjectIndex(idx)
+  }
+
+  const openProjectsArchive = () => {
+    if (window.location.pathname !== '/projects') {
+      window.history.pushState({ page: 'projects' }, '', '/projects')
+    }
+    setActiveProjectIndex(null)
+    setSoftwarePageOpen(false)
+    setProjectsPageOpen(true)
+  }
+
+  const openSoftwarePage = () => {
+    if (window.location.pathname !== '/software') {
+      window.history.pushState({ page: 'software' }, '', '/software')
+    }
+    setActiveProjectIndex(null)
+    setProjectsPageOpen(false)
+    setSoftwarePageOpen(true)
+  }
+
+  const closeToHomeWorks = () => {
+    window.history.pushState({}, '', '/#works')
+    setActiveProjectIndex(null)
+    setProjectsPageOpen(false)
+    setSoftwarePageOpen(false)
+    window.requestAnimationFrame(() => {
+      const worksEl = document.getElementById('works')
+      if (worksEl) {
+        worksEl.scrollIntoView({ behavior: 'instant' as ScrollBehavior })
+      }
+    })
+  }
 
   // MagicBento items for "About Me & Core AI / Web Capabilities"
   const aboutBentoItems: MagicBentoItem[] = [
@@ -322,6 +414,43 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+      />
+
+      {activeProjectIndex !== null && projects[activeProjectIndex] && (
+        <ProjectCaseStudyPage
+          project={projects[activeProjectIndex]}
+          projectIndex={activeProjectIndex}
+          totalProjects={projects.length}
+          isModalOpen={contactOpen}
+          onBackToHome={closeToHomeWorks}
+          onOpenAllProjects={openProjectsArchive}
+          onSelectProject={(nextIndex) => openCaseStudy(nextIndex)}
+          onOpenContact={() => setContactOpen(true)}
+        />
+      )}
+
+      {projectsPageOpen && activeProjectIndex === null && !softwarePageOpen && (
+        <ProjectsArchivePage
+          isModalOpen={contactOpen}
+          onBackToHome={closeToHomeWorks}
+          onSelectProject={(idx) => openCaseStudy(idx)}
+          onOpenContact={() => setContactOpen(true)}
+        />
+      )}
+
+      {softwarePageOpen && activeProjectIndex === null && (
+        <SoftwareDevelopmentPage
+          isModalOpen={contactOpen}
+          onBackToHome={closeToHomeWorks}
+          onOpenAllProjects={openProjectsArchive}
+          onOpenContact={() => setContactOpen(true)}
+        />
+      )}
+
+      <div className={isSubPageOpen ? 'hidden' : 'block'}>
       <EntranceLoader
         loadedFrames={loadedFrames}
         totalFrames={totalFrames}
@@ -330,17 +459,13 @@ export default function App() {
 
       <ScrollHero
         onOpenContact={() => setContactOpen(true)}
-        isModalOpen={contactOpen}
+        onOpenSoftware={openSoftwarePage}
+        isModalOpen={isAnyModalOpen}
         isLoading={isLoading}
         onLoadProgress={(loaded, total) => {
           setLoadedFrames(loaded)
           setTotalFrames(total)
         }}
-      />
-
-      <ContactModal
-        open={contactOpen}
-        onClose={() => setContactOpen(false)}
       />
 
       {/* Top Section: Seamless In-Place Hero-to-MagicRings Cross-Dissolve + LogoLoop + About Bento Grid */}
@@ -360,7 +485,7 @@ export default function App() {
             colorTwo="#3b55ff"
             motion="pulse"
             ringCount={8}
-            speed={1.05}
+            speed={isAnyModalOpen ? 0 : 1.05}
             lineThickness={2.2}
             glow={1.25}
             baseRadius={0.3}
@@ -457,10 +582,40 @@ export default function App() {
       {/* Selected Web & AI Projects */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <section id="works" className="scroll-mt-24 space-y-8">
-          <div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
               Selected Web &amp; AI Projects
             </h2>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={openSoftwarePage}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-neutral-300 hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+              >
+                <span>Software Development (CRM)</span>
+                <span className="text-[#4f6bff]">→</span>
+              </button>
+
+              <StarBorder
+                as="button"
+                type="button"
+                onClick={openProjectsArchive}
+                color="#0219EA"
+                trailColor="#3b55ff"
+                backgroundColor="rgba(2, 25, 234, 0.2)"
+                textColor="#ffffff"
+                borderColor="rgba(2, 25, 234, 0.55)"
+                duration={4}
+                radius={12}
+                glow={0.6}
+                hover="lap"
+                clickPulse
+                className="!px-4 !py-2.5 text-xs font-mono uppercase tracking-wider cursor-pointer"
+              >
+                View All Projects →
+              </StarBorder>
+            </div>
           </div>
 
           <AnimatedContent
@@ -484,14 +639,20 @@ export default function App() {
                   borderGlow={0.75}
                   className="!p-0 !rounded-2xl overflow-hidden border border-white/10 flex flex-col"
                 >
-                  <div className="h-56 w-full overflow-hidden bg-neutral-900 border-b border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => openCaseStudy(idx)}
+                    aria-label={`Open ${p.title} case study`}
+                    className="group h-56 w-full overflow-hidden bg-neutral-900 border-b border-white/10 text-left cursor-pointer"
+                  >
                     <img
                       src={p.image}
                       alt={p.title}
                       loading="lazy"
-                      className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                     />
-                  </div>
+                  </button>
+
                   <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
                       <span className="text-[11px] font-mono uppercase tracking-wider text-[#4f6bff]">
@@ -504,12 +665,12 @@ export default function App() {
                         {p.description}
                       </p>
                     </div>
-                    <div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <StarBorder
-                        as="a"
-                        href={p.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        as="button"
+                        type="button"
+                        onClick={() => openCaseStudy(idx)}
                         color={v.color}
                         trailColor={v.trailColor}
                         backgroundColor={v.backgroundColor}
@@ -520,10 +681,20 @@ export default function App() {
                         glow={0.6}
                         hover="lap"
                         clickPulse
-                        className="!px-4 !py-2.5 text-xs font-mono uppercase tracking-wider"
+                        className="!px-4 !py-2.5 text-xs font-mono uppercase tracking-wider cursor-pointer"
                       >
-                        Launch Live Site ↗
+                        View Case Study
                       </StarBorder>
+
+                      <a
+                        href={p.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-neutral-300 hover:border-[#0219EA] hover:text-white transition-colors"
+                      >
+                        <span>Launch Live Site</span>
+                        <span className="text-[#4f6bff]">↗</span>
+                      </a>
                     </div>
                   </div>
                 </SpotlightCard>
@@ -550,7 +721,7 @@ export default function App() {
             baseColor="#ffffff"
             baseOpacity={0.2}
             glitchAmount={0.55}
-            speed={1}
+            speed={isAnyModalOpen ? 0 : 1}
             flow={0.5}
             edgeFade={0.18}
             centerFade={0.15}
@@ -678,6 +849,7 @@ export default function App() {
             </AnimatedContent>
           </section>
         </div>
+      </div>
       </div>
     </div>
   )

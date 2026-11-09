@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/projects",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/software",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/case-study/:slug*",
+      "destination": "/index.html"
+    }
+  ]
+}

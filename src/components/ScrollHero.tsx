@@ -140,6 +140,11 @@ const MENU_ITEMS = [
   { label: 'Home', ariaLabel: 'Go to top hero section', link: '#home' },
   { label: 'About', ariaLabel: 'View profile and core AI capabilities', link: '#about' },
   { label: 'Works', ariaLabel: 'Explore selected web and AI projects', link: '#works' },
+  {
+    label: 'Software Development',
+    ariaLabel: 'Explore interactive software development and CRM sandbox',
+    link: '/software',
+  },
   { label: 'Stack', ariaLabel: 'View experience and engineering stack', link: '#experience' },
   { label: 'Contact', ariaLabel: 'Get in touch with Mark Anthony Ebio', link: '#contact' },
 ]
@@ -191,6 +196,7 @@ function itemStageStyle(
 
 interface ScrollHeroProps {
   onOpenContact?: () => void
+  onOpenSoftware?: () => void
   isModalOpen?: boolean
   isLoading?: boolean
   onLoadProgress?: (loaded: number, total: number) => void
@@ -198,6 +204,7 @@ interface ScrollHeroProps {
 
 export default function ScrollHero({
   onOpenContact,
+  onOpenSoftware,
   isModalOpen = false,
   isLoading = false,
   onLoadProgress,
@@ -244,9 +251,11 @@ export default function ScrollHero({
   }>({ active: false, opacity: 0, percent: 0 })
   const [loopCycle, setLoopCycle] = useState(0)
 
-  const menuItems = MENU_ITEMS.map((item) =>
-    item.label === 'Contact' ? { ...item, onClick: onOpenContact } : item
-  )
+  const menuItems = MENU_ITEMS.map((item) => {
+    if (item.label === 'Contact') return { ...item, onClick: onOpenContact }
+    if (item.label === 'Software Development') return { ...item, onClick: onOpenSoftware }
+    return item
+  })
 
   const socialItems = [
     { label: 'GitHub', link: profile.socials.github },
