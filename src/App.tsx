@@ -25,7 +25,9 @@ import {
 } from 'react-icons/si'
 import {
   AIIntegrationVisual,
+  CloudSecurityVisual,
   UIUXEngineeringVisual,
+  WebDevVisual,
 } from './components/AboutCardAnimations'
 import CareerTrackAnimation from './components/CareerTrackAnimation'
 import ContactModal from './components/ContactModal'
@@ -190,7 +192,7 @@ export default function App() {
       id: 'svc-web-dev',
       title: services[2].label,
       description: services[2].description,
-      visual: 'dashboard',
+      visual: <WebDevVisual />,
       colSpan: 1,
       rowSpan: 1,
     },
@@ -207,7 +209,7 @@ export default function App() {
       title: 'Resilient Cloud & API Security',
       description:
         'Authenticated webhooks, rate-limited LLM pipelines, and fault-tolerant data synchronization.',
-      visual: 'security',
+      visual: <CloudSecurityVisual />,
       colSpan: 1,
       rowSpan: 1,
     },

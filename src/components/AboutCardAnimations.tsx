@@ -392,3 +392,314 @@ export function UIUXEngineeringVisual() {
     </div>
   )
 }
+
+
+const WEB_BARS = [42, 64, 52, 78, 66, 96, 82]
+
+/**
+ * Anime.js v4 visual for "Web & Software Development" card
+ * Animates the $48.2k Weekly metric, 7-bar full-stack throughput chart & SVG trend line
+ */
+export function WebDevVisual() {
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!rootRef.current) return
+
+    const scope = createScope({ root: rootRef.current }).add(() => {
+      // Continuously draw & undraw the trend sparkline over the bars
+      animate(createDrawable('.webdev-sparkline'), {
+        draw: ['0 0', '0 1'],
+        duration: 1900,
+        ease: 'inOutCubic',
+        alternate: true,
+        loop: true,
+      })
+
+      const tl = createTimeline({
+        loop: true,
+        defaults: { ease: 'outQuad' },
+      })
+
+      // 1. Staggered spring bar wave
+      tl.add('.webdev-bar', {
+        scaleY: [0.35, 1.08, 0.72, 1],
+        duration: 1400,
+        delay: stagger(90, { from: 'first' }),
+        ease: createSpring({ stiffness: 210, damping: 14 }),
+      })
+        // 2. Peak bar & metric badge pulse
+        .add(
+          '.webdev-peak',
+          {
+            backgroundColor: ['#0219EA', '#4f6bff', '#0219EA'],
+            boxShadow: [
+              '0 0 0px rgba(79,107,255,0)',
+              '0 0 14px rgba(79,107,255,0.75)',
+              '0 0 4px rgba(79,107,255,0.25)',
+            ],
+            duration: 900,
+          },
+          '-=1100'
+        )
+        .add(
+          '.webdev-metric',
+          {
+            scale: [1, 1.05, 1],
+            duration: 650,
+            ease: createSpring({ stiffness: 240, damping: 15 }),
+          },
+          '-=900'
+        )
+    })
+
+    return () => scope.revert()
+  }, [])
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative flex h-[64px] w-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+    >
+      {/* Top metric row */}
+      <div className="flex items-center justify-between">
+        <div className="webdev-metric flex items-baseline gap-1.5 origin-left">
+          <span className="text-[14px] leading-none font-semibold tracking-tight text-white tabular-nums">
+            $48.2k
+          </span>
+          <span className="text-[11px] leading-none text-neutral-400">
+            Weekly
+          </span>
+        </div>
+        <span className="rounded-md bg-[#0219EA]/25 border border-[#4f6bff]/35 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-[#4f6bff]">
+          +24.8%
+        </span>
+      </div>
+
+      {/* Animated Bar Plot + SVG Trend Overlay */}
+      <div className="relative mt-1.5 flex h-7 w-full items-end gap-[5px]">
+        {WEB_BARS.map((h, i) => {
+          const isPeak = i === 5
+          return (
+            <span
+              key={i}
+              style={{ height: `${h}%` }}
+              className={`webdev-bar flex-1 origin-bottom rounded-[3px_3px_2px_2px] ${
+                isPeak
+                  ? 'webdev-peak bg-[#0219EA]'
+                  : 'bg-[#0219EA]/30'
+              }`}
+            />
+          )
+        })}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+          viewBox="0 0 140 28"
+          preserveAspectRatio="none"
+        >
+          <path
+            className="webdev-sparkline"
+            d="M 6 20 C 28 14, 48 18, 70 10 C 92 14, 112 3, 134 6"
+            fill="none"
+            stroke="#4f6bff"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Anime.js v4 visual for "Resilient Cloud & API Security" card
+ * Animates SSO & 2FA rows, spring toggle switches, and SVG icon strokes
+ */
+export function CloudSecurityVisual() {
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!rootRef.current) return
+
+    const scope = createScope({ root: rootRef.current }).add(() => {
+      // Subtle SVG stroke draw on Key & Fingerprint icons
+      animate(createDrawable('.sec-icon-draw'), {
+        draw: ['0 0.35', '0 1', '0 1'],
+        duration: 2400,
+        ease: 'inOutQuad',
+        loop: true,
+      })
+
+      const tl = createTimeline({
+        loop: true,
+        defaults: { ease: 'outQuad' },
+      })
+
+      // 1. SSO row activates & knob springs right
+      tl.add('.sec-row-sso', {
+        borderColor: [
+          'rgba(255,255,255,0.12)',
+          'rgba(79,107,255,0.85)',
+          'rgba(255,255,255,0.16)',
+        ],
+        scale: [1, 1.02, 1],
+        duration: 600,
+      })
+        .add(
+          '.sec-knob-sso',
+          {
+            translateX: [0, 10],
+            scale: [0.85, 1.15, 1],
+            duration: 550,
+            ease: createSpring({ stiffness: 250, damping: 13 }),
+          },
+          '<'
+        )
+        .add(
+          '.sec-track-sso',
+          {
+            backgroundColor: [
+              'rgba(255,255,255,0.18)',
+              '#0219EA',
+            ],
+            boxShadow: [
+              '0 0 0px rgba(2,25,234,0)',
+              '0 0 10px rgba(79,107,255,0.65)',
+            ],
+            duration: 420,
+          },
+          '<'
+        )
+        // 2. 2FA row activates & knob springs right
+        .add(
+          '.sec-row-2fa',
+          {
+            borderColor: [
+              'rgba(255,255,255,0.12)',
+              'rgba(52,211,153,0.85)',
+              'rgba(255,255,255,0.16)',
+            ],
+            scale: [1, 1.02, 1],
+            duration: 600,
+          },
+          '-=180'
+        )
+        .add(
+          '.sec-knob-2fa',
+          {
+            translateX: [0, 10],
+            scale: [0.85, 1.15, 1],
+            duration: 550,
+            ease: createSpring({ stiffness: 250, damping: 13 }),
+          },
+          '<'
+        )
+        .add(
+          '.sec-track-2fa',
+          {
+            backgroundColor: [
+              'rgba(255,255,255,0.18)',
+              '#0219EA',
+            ],
+            boxShadow: [
+              '0 0 0px rgba(2,25,234,0)',
+              '0 0 10px rgba(79,107,255,0.65)',
+            ],
+            duration: 420,
+          },
+          '<'
+        )
+        // Hold active state, then reset smoothly for next cycle
+        .add(
+          '.sec-knob-sso, .sec-knob-2fa',
+          {
+            translateX: [10, 0],
+            duration: 420,
+            delay: 950,
+            ease: 'inOutQuad',
+          }
+        )
+        .add(
+          '.sec-track-sso, .sec-track-2fa',
+          {
+            backgroundColor: 'rgba(255,255,255,0.18)',
+            boxShadow: '0 0 0px rgba(2,25,234,0)',
+            duration: 380,
+          },
+          '<'
+        )
+    })
+
+    return () => scope.revert()
+  }, [])
+
+  return (
+    <div
+      ref={rootRef}
+      className="flex h-[68px] w-full flex-col justify-center gap-1.5"
+    >
+      {/* Row 1: SSO */}
+      <div className="sec-row-sso relative flex h-[30px] items-center gap-2 rounded-lg border border-white/12 bg-white/[0.06] px-2.5 text-xs font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+        <svg
+          className="h-3.5 w-3.5 text-[#4f6bff] shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle className="sec-icon-draw" cx="7.5" cy="15.5" r="5.5" />
+          <path className="sec-icon-draw" d="m21 2-9.6 9.6" />
+          <path d="m15.5 7.5 3 3L22 7l-3-3" />
+        </svg>
+        <span className="text-[12px] font-medium text-white">SSO</span>
+        <span className="ml-auto text-[9px] font-mono uppercase tracking-wider text-neutral-400 mr-1">
+          OAuth2
+        </span>
+        <span className="sec-track-sso relative h-4 w-[26px] shrink-0 rounded-full bg-[#0219EA] p-[2px]">
+          <span className="sec-knob-sso block h-3 w-3 rounded-full bg-white shadow-sm" />
+        </span>
+      </div>
+
+      {/* Row 2: 2FA */}
+      <div className="sec-row-2fa relative flex h-[30px] items-center gap-2 rounded-lg border border-white/12 bg-white/[0.06] px-2.5 text-xs font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+        <svg
+          className="h-3.5 w-3.5 text-emerald-400 shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path
+            className="sec-icon-draw"
+            d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"
+          />
+          <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+          <path
+            className="sec-icon-draw"
+            d="M17.29 21.02c.12-.6.43-2.3.5-3.02"
+          />
+          <path d="M2 12a10 10 0 0 1 18-6" />
+          <path d="M2 16h.01" />
+          <path d="M21.8 16c.2-2 .131-5.354 0-6" />
+          <path
+            className="sec-icon-draw"
+            d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"
+          />
+          <path d="M8.65 22c.21-.66.45-1.32.57-2" />
+          <path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
+        </svg>
+        <span className="text-[12px] font-medium text-white">2FA</span>
+        <span className="ml-auto text-[9px] font-mono uppercase tracking-wider text-emerald-400/90 mr-1">
+          Verified
+        </span>
+        <span className="sec-track-2fa relative h-4 w-[26px] shrink-0 rounded-full bg-[#0219EA] p-[2px]">
+          <span className="sec-knob-2fa block h-3 w-3 rounded-full bg-white shadow-sm" />
+        </span>
+      </div>
+    </div>
+  )
+}
