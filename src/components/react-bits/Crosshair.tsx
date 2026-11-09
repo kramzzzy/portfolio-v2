@@ -135,6 +135,8 @@ const Crosshair = ({
     let raf = 0;
     let last = 0;
     let alive = true;
+    let idleTimer = 0;
+    const IDLE_HIDE_MS = 850;
 
     let resizePending = false;
     const applyResize = () => {
@@ -397,10 +399,19 @@ const Crosshair = ({
     };
 
     const leave = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = 0;
       state.inside = false;
       state.target = null;
       setCursorHidden(false);
       wake();
+    };
+
+    const scheduleIdleHide = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => {
+        leave();
+      }, IDLE_HIDE_MS);
     };
 
     const onMove = (event: PointerEvent) => {
@@ -409,6 +420,7 @@ const Crosshair = ({
       if (event.pointerType === 'touch' && event.buttons === 0) return;
       enter();
       retarget(event.target);
+      scheduleIdleHide();
       wake();
     };
 
@@ -417,6 +429,7 @@ const Crosshair = ({
       if (!settingsRef.current.clickPulse || reduce) return;
       relative();
       state.pulses.push({ x: state.tx, y: state.ty, age: 0 });
+      scheduleIdleHide();
       wake();
     };
 
@@ -447,6 +460,7 @@ const Crosshair = ({
 
     return () => {
       alive = false;
+      window.clearTimeout(idleTimer);
       cancelAnimationFrame(raf);
       observer.disconnect();
       scope.removeEventListener('pointermove', onMove);
