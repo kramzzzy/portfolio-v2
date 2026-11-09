@@ -24,6 +24,7 @@ export default function VideoTooltip({
   const [isMuted, setIsMuted] = useState(false)
   const [aspectRatio, setAspectRatio] = useState('9 / 16')
   const [progress, setProgress] = useState(0)
+  const [isLoopingReset, setIsLoopingReset] = useState(false)
   const [coords, setCoords] = useState<{
     left: number
     bottom: number
@@ -195,7 +196,6 @@ export default function VideoTooltip({
                 ref={videoRef}
                 src={videoSrc}
                 playsInline
-                loop
                 muted={isMuted}
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget
@@ -207,10 +207,42 @@ export default function VideoTooltip({
                   const v = e.currentTarget
                   if (v.duration > 0) {
                     setProgress((v.currentTime / v.duration) * 100)
+                    if (v.duration - v.currentTime <= 0.35 && !isLoopingReset) {
+                      setIsLoopingReset(true)
+                    }
                   }
+                }}
+                onEnded={(e) => {
+                  const v = e.currentTarget
+                  setIsLoopingReset(true)
+                  window.setTimeout(() => {
+                    v.currentTime = 0
+                    setProgress(0)
+                    v.play().catch(() => {})
+                    window.setTimeout(() => {
+                      setIsLoopingReset(false)
+                    }, 260)
+                  }, 380)
                 }}
                 className="h-full w-full object-cover block"
               />
+
+              {/* Seamless Loop-End Loading Transition Overlay */}
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-neutral-950/90 backdrop-blur-md transition-opacity duration-300 ${
+                  isLoopingReset ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <div className="relative flex h-10 w-10 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border border-[#0219EA]/30" />
+                  <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#0219EA] border-r-[#3b55ff] animate-spin" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0219EA] shadow-[0_0_10px_#0219EA]" />
+                </div>
+                <span className="mt-2.5 text-[10px] font-mono uppercase tracking-[0.22em] text-[#4f6bff]">
+                  Replaying
+                </span>
+              </div>
 
               {/* Top Overlay Controls (Audio Toggle + VH Fullscreen Toggle + Close) */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-auto">

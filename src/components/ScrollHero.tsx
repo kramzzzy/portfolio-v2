@@ -193,6 +193,9 @@ export default function ScrollHero({
     isHeroInView: true,
     isVideoTooltipOpen: false,
     isModalOpen: false,
+    isLoopResetting: false,
+    loopResetElapsed: 0,
+    hasSwappedToStart: false,
   })
 
   useEffect(() => {
@@ -204,7 +207,14 @@ export default function ScrollHero({
   }, [isModalOpen, isLoading])
 
   const [progress, setProgress] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const [loadedCount, setLoadedCount] = useState(0)
+  const [loopResetState, setLoopResetState] = useState<{
+    active: boolean
+    opacity: number
+    percent: number
+  }>({ active: false, opacity: 0, percent: 0 })
+  const [loopCycle, setLoopCycle] = useState(0)
 
   const socialItems = [
     { label: 'GitHub', link: profile.socials.github },
@@ -349,9 +359,18 @@ export default function ScrollHero({
 
       const ds = nextScroll - state.lastScrollProgress
       state.lastScrollProgress = nextScroll
+      setScrollProgress((prev) =>
+        Math.abs(prev - nextScroll) > 0.002 ? nextScroll : prev
+      )
       if (Math.abs(ds) < 0.0001) return
 
       state.lastInteractionTime = performance.now()
+      if (state.isLoopResetting) {
+        state.isLoopResetting = false
+        state.loopResetElapsed = 0
+        state.hasSwappedToStart = false
+        setLoopResetState({ active: false, opacity: 0, percent: 0 })
+      }
 
       if (ds > 0) {
         // Continue forward smoothly from whatever frame is currently showing
@@ -418,12 +437,58 @@ export default function ScrollHero({
         idleMs > IDLE_RESUME_MS &&
         state.lastScrollProgress < 0.98
 
-      if (shouldAutoplay) {
+      const LOOP_RESET_DURATION = 1.25
+
+      if (state.isLoopResetting) {
+        if (!shouldAutoplay) {
+          state.isLoopResetting = false
+          state.loopResetElapsed = 0
+          state.hasSwappedToStart = false
+          setLoopResetState({ active: false, opacity: 0, percent: 0 })
+        } else {
+          state.loopResetElapsed += dt
+          const t = Math.min(1, state.loopResetElapsed / LOOP_RESET_DURATION)
+
+          // Swap to Frame 1 behind the opaque loading curtain at t >= 0.5
+          if (t >= 0.5 && !state.hasSwappedToStart) {
+            state.hasSwappedToStart = true
+            state.targetProgress = 0
+            state.smoothProgress = 0
+            lastDrawnFrame = -1
+            setLoopCycle((c) => c + 1)
+          }
+
+          const overlayOpacity =
+            t < 0.36
+              ? t / 0.36
+              : t < 0.62
+                ? 1
+                : Math.max(0, 1 - (t - 0.62) / 0.38)
+          const barPercent = Math.min(100, Math.round((t / 0.65) * 100))
+
+          setLoopResetState({
+            active: true,
+            opacity: overlayOpacity,
+            percent: barPercent,
+          })
+
+          if (t >= 1) {
+            state.isLoopResetting = false
+            state.loopResetElapsed = 0
+            state.hasSwappedToStart = false
+            setLoopResetState({ active: false, opacity: 0, percent: 0 })
+          }
+        }
+      } else if (shouldAutoplay) {
         const next = state.targetProgress + dt / AUTOPLAY_DURATION_SEC
         if (next >= 1) {
-          // Loop seamlessly back to frame 1 when idle playback finishes
-          state.targetProgress = next - 1
-          state.smoothProgress = state.targetProgress
+          // Trigger seamless end-of-loop loading transition before restarting from Frame 1
+          state.targetProgress = 1
+          state.smoothProgress = 1
+          state.isLoopResetting = true
+          state.loopResetElapsed = 0
+          state.hasSwappedToStart = false
+          setLoopResetState({ active: true, opacity: 0.05, percent: 0 })
         } else {
           state.targetProgress = next
         }
@@ -528,6 +593,12 @@ export default function ScrollHero({
       ? 0
       : Math.min(1, (progress - 0.66) / (0.75 - 0.66))
 
+  // Smooth scroll-exit envelope (84% -> 100% of hero scroll) for seamless handoff into MagicRings
+  const scrollExitProgress = Math.max(
+    0,
+    Math.min(1, (scrollProgress - 0.84) / 0.16)
+  )
+
   const isAct2Active = act2Opacity > 0.12
   const [act2RunId, setAct2RunId] = useState(0)
 
@@ -587,7 +658,14 @@ export default function ScrollHero({
         {/* Autoplay + Scroll-Scrubbed Operating Frame Canvas */}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full block object-cover"
+          style={{
+            transform:
+              scrollExitProgress > 0.001
+                ? `scale(${1 + scrollExitProgress * 0.045})`
+                : undefined,
+            opacity: 1 - scrollExitProgress * 0.45,
+          }}
+          className="absolute inset-0 h-full w-full block object-cover transition-transform duration-75 ease-out"
         />
 
         {/* Controlled Vignette & Scrims to protect HUD Typography without hiding the subject */}
@@ -598,8 +676,57 @@ export default function ScrollHero({
               'radial-gradient(circle at 50% 42%, transparent 28%, rgba(5, 8, 15, 0.52) 78%, rgba(5, 8, 15, 0.88) 100%)',
           }}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-neutral-950 via-neutral-950/70 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-neutral-950 via-neutral-950/85 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-neutral-950/60 to-transparent" />
+
+        {/* Emerging Energy Horizon on Scroll-Down Handoff */}
+        <div
+          aria-hidden="true"
+          style={{ opacity: 0.25 + scrollExitProgress * 0.75 }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-72"
+        >
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                'radial-gradient(ellipse 68% 90% at 50% 100%, rgba(2, 25, 234, 0.32) 0%, rgba(59, 85, 255, 0.12) 45%, transparent 78%)',
+            }}
+          />
+        </div>
+
+        {/* Seamless Loop-End Reboot Loading Overlay */}
+        {loopResetState.active && (
+          <div
+            aria-hidden="true"
+            style={{ opacity: loopResetState.opacity }}
+            className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-neutral-950/92 backdrop-blur-md"
+          >
+            <div className="relative flex flex-col items-center gap-4">
+              {/* Dual-Ring Cybernetic Spinner */}
+              <div className="relative flex h-14 w-14 items-center justify-center">
+                <span className="absolute inset-0 rounded-full border border-[#0219EA]/30" />
+                <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#0219EA] border-r-[#3b55ff] animate-spin" />
+                <span className="absolute inset-2 rounded-full border border-transparent border-b-[#4f6bff]/80 animate-spin [animation-direction:reverse] [animation-duration:900ms]" />
+                <span className="h-2 w-2 rounded-full bg-[#0219EA] shadow-[0_0_12px_#0219EA]" />
+              </div>
+
+              <div className="w-44 space-y-1.5">
+                <div className="h-[2px] w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full bg-[#0219EA] transition-[width] duration-75 ease-out"
+                    style={{ width: `${loopResetState.percent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em]">
+                  <span className="text-neutral-400">Syncing Loop</span>
+                  <span className="text-[#4f6bff] tabular-nums font-semibold">
+                    {String(loopResetState.percent).padStart(3, '0')}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Subtle Corner Cyber Brackets */}
         <div className="pointer-events-none absolute inset-4 sm:inset-6 top-4 sm:top-5 bottom-6">
@@ -626,7 +753,7 @@ export default function ScrollHero({
                 {/* Bold Interactive TechText Name Wordmark */}
                 <div className="relative -ml-[5%] w-[105%] h-14 sm:h-24 lg:h-28">
                   <TechText
-                    key={isLoading ? 'loading' : 'ready'}
+                    key={isLoading ? 'loading' : `ready-${loopCycle}`}
                     text="MARK ANTHONY EBIO"
                     fontWeight={800}
                     fontSize={92}

@@ -335,22 +335,28 @@ export default function App() {
         onClose={() => setContactOpen(false)}
       />
 
-      {/* Top Section: LogoLoop + About Mark Anthony Ebio with MagicRings Background */}
-      <div className="relative isolate w-full overflow-hidden">
+      {/* Top Section: Seamless Hero-to-MagicRings Emergence + LogoLoop + About Bento Grid */}
+      <div className="relative isolate z-20 -mt-28 pt-28 sm:-mt-40 sm:pt-40 w-full overflow-hidden">
         <div
           aria-hidden="true"
+          style={{
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 11%, #000 24%, #000 84%, transparent 100%)',
+            maskImage:
+              'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 11%, #000 24%, #000 84%, transparent 100%)',
+          }}
           className="pointer-events-none absolute inset-0 z-0"
         >
           <MagicRings
             color="#0219EA"
             colorTwo="#3b55ff"
             motion="pulse"
-            ringCount={7}
-            speed={1}
-            lineThickness={2}
-            glow={1.15}
-            baseRadius={0.32}
-            radiusStep={0.1}
+            ringCount={8}
+            speed={1.05}
+            lineThickness={2.2}
+            glow={1.25}
+            baseRadius={0.3}
+            radiusStep={0.095}
             hoverScale={1.2}
             clickBurst={true}
             maxDevicePixelRatio={1.5}
@@ -358,33 +364,53 @@ export default function App() {
         </div>
 
         <div className="relative z-10">
-          {/* Tools, AI & Software LogoLoop Band */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-neutral-300">
-            <LogoLoop
-              logos={TOOL_LOGOS}
-              speed={90}
-              direction="left"
-              logoHeight={28}
-              gap={52}
-              hoverSpeed={0}
-              scaleOnHover
-              magnify={0.35}
-              labels="inline"
-              muted={0.25}
-              fadeOut
-              fadeOutWidth={0.12}
-              ariaLabel="AI, automation, and web engineering tools"
-            />
-          </div>
+          {/* Emerging Energy Stage + Tools, AI & Software LogoLoop Band before Bento Grid */}
+          <AnimatedContent
+            distance={50}
+            direction="vertical"
+            duration={0.8}
+            ease="power3.out"
+            threshold={0.1}
+            trigger="scroll"
+            once={false}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-10 sm:pb-14 text-neutral-300">
+              <LogoLoop
+                logos={TOOL_LOGOS}
+                speed={90}
+                direction="left"
+                logoHeight={28}
+                gap={52}
+                hoverSpeed={0}
+                scaleOnHover
+                magnify={0.35}
+                labels="inline"
+                muted={0.25}
+                fadeOut
+                fadeOutWidth={0.12}
+                ariaLabel="AI, automation, and web engineering tools"
+              />
+            </div>
+          </AnimatedContent>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16">
             {/* About Me & Core Capabilities MagicBento Section */}
             <section id="about" className="scroll-mt-24 space-y-8">
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                  About Mark Anthony Ebio
-                </h2>
-              </div>
+              <AnimatedContent
+                distance={45}
+                direction="vertical"
+                duration={0.75}
+                ease="power3.out"
+                threshold={0.15}
+                trigger="scroll"
+                once={false}
+              >
+                <div>
+                  <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                    About Mark Anthony Ebio
+                  </h2>
+                </div>
+              </AnimatedContent>
 
               <AnimatedContent
                 distance={90}
@@ -500,6 +526,12 @@ export default function App() {
       <div className="relative isolate w-full overflow-hidden">
         <div
           aria-hidden="true"
+          style={{
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)',
+            maskImage:
+              'linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)',
+          }}
           className="pointer-events-none absolute inset-0 z-0"
         >
           <LetterGlitch
