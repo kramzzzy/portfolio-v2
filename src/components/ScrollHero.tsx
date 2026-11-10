@@ -875,7 +875,7 @@ export default function ScrollHero({
           aria-label={isAudioMuted ? 'Unmute hero soundtrack' : 'Mute hero soundtrack'}
           title={isAudioMuted ? 'Unmute Hero Audio' : 'Mute Hero Audio'}
           style={{ opacity: Math.max(0, 1 - canvasExitProgress * 1.4) }}
-          className="absolute bottom-5 left-4 sm:bottom-7 sm:left-7 z-40 flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-neutral-950/65 backdrop-blur-xl text-neutral-300 hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+          className="absolute bottom-5 left-4 sm:bottom-7 sm:left-7 z-40 flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 hover:text-white transition-colors cursor-pointer"
         >
           {isAudioMuted ? (
             <svg
@@ -991,7 +991,6 @@ export default function ScrollHero({
           className="pointer-events-none absolute inset-4 sm:inset-6 top-4 sm:top-5 bottom-6"
         >
           <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-[#0219EA]/80 rounded-tl-lg" />
-          <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-[#0219EA]/80 rounded-bl-lg" />
           <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-[#0219EA]/80 rounded-br-lg" />
         </div>
 
