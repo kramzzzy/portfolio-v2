@@ -342,7 +342,7 @@ export default function FigmaDesignCanvas({ project }: FigmaDesignCanvasProps) {
 
               <div className="flex items-center gap-2 text-xs min-w-0">
                 <span className="text-neutral-400 hidden sm:inline">
-                  Figma Inspector
+                  KramZ Design
                 </span>
                 <span className="text-white/20 hidden sm:inline">/</span>
                 <span className="font-semibold text-white truncate">
