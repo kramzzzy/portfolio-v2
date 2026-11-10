@@ -995,6 +995,231 @@ export default function ScrollHero({
         </div>
 
         {/* ============================================================
+            FLUSH EDGE-DOCKED SYSTEM TELEMETRY RAILS (OPTION A)
+           ============================================================ */}
+        {(() => {
+          const pct = Math.min(100, Math.max(0, Math.round(progress * 100)))
+          const currentFrame = Math.min(
+            TOTAL_FRAMES,
+            Math.max(1, Math.round(1 + progress * (TOTAL_FRAMES - 1)))
+          )
+          const actLabel =
+            progress < 0.31 ? 'ACT 01' : progress < 0.66 ? 'ACT 02' : 'ACT 03'
+          const ringCircumference = 113.1 // 2 * Math.PI * 18
+          const ringOffset = ringCircumference * (1 - progress)
+          const aiCorePct = 92 + Math.round(Math.sin(progress * Math.PI * 4) * 4)
+          const aiCoreCircumference = 100.5 // 2 * Math.PI * 16
+          const aiCoreOffset = aiCoreCircumference * (1 - aiCorePct / 100)
+          const livePingMs = 26 + Math.round(Math.abs(Math.sin(progress * 18)) * 6)
+          const railOpacity = Math.max(0, 1 - scrollExitProgress * 1.5)
+          const signalSeeds = [78, 96, 58, 86, 100, 66, 48, 90, 76, 54, 92, 64]
+          const nodeSeeds = [65, 90, 55, 100, 78]
+
+          return (
+            <>
+              {/* LEFT FLUSH EDGE DOCK: Telemetry Spine, Signal Equalizer & Frame Counter */}
+              <div
+                style={{ opacity: railOpacity }}
+                className="hidden lg:flex pointer-events-auto absolute left-0 top-1/2 -translate-y-1/2 z-30 w-[66px] flex-col items-center gap-4 py-4 pr-2.5 pl-2 rounded-r-[18px] border-t border-r border-b border-[#4f6bff]/35 border-l-[3px] border-l-[#0219EA] bg-[linear-gradient(90deg,rgba(2,25,234,0.22)_0%,rgba(8,12,24,0.84)_100%)] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.16),8px_0_32px_rgba(0,0,0,0.65),0_0_24px_rgba(2,25,234,0.28)]"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    jumpToProgress(
+                      progress < 0.31 ? 0.5 : progress < 0.66 ? 0.85 : 0
+                    )
+                  }
+                  title="Jump to next Hero Act"
+                  className="group flex flex-col items-center gap-1 cursor-pointer"
+                >
+                  <svg width="44" height="44" viewBox="0 0 44 44">
+                    <circle
+                      cx="22"
+                      cy="22"
+                      r="18"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="3"
+                    />
+                    <circle
+                      cx="22"
+                      cy="22"
+                      r="18"
+                      fill="none"
+                      stroke="#0219EA"
+                      strokeWidth="3"
+                      strokeDasharray={ringCircumference}
+                      strokeDashoffset={ringOffset}
+                      strokeLinecap="round"
+                      transform="rotate(-90 22 22)"
+                      className="transition-[stroke-dashoffset] duration-150 ease-out"
+                    />
+                    <text
+                      x="22"
+                      y="25"
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      className="font-mono text-[10px] font-bold"
+                    >
+                      {pct}%
+                    </text>
+                  </svg>
+                  <span className="font-mono text-[9px] tracking-[0.08em] text-[#4f6bff] group-hover:text-white transition-colors">
+                    {actLabel}
+                  </span>
+                </button>
+
+                <div className="h-px w-9 bg-white/15" />
+
+                {/* Flush-Left 12-Bar Animated Signal Equalizer */}
+                <div className="flex w-full flex-col items-start gap-1.5 pl-0.5">
+                  <span className="self-center font-mono text-[8px] tracking-[0.1em] text-slate-400">
+                    SIGNAL
+                  </span>
+                  <div className="flex w-[44px] flex-col gap-1 py-1">
+                    {signalSeeds.map((seed, idx) => {
+                      const wave = Math.sin(progress * 28 + idx * 0.85) * 18
+                      const widthPct = Math.min(
+                        100,
+                        Math.max(24, Math.round(seed + wave))
+                      )
+                      return (
+                        <div
+                          key={idx}
+                          className="h-1 w-full overflow-hidden rounded-r-full bg-white/[0.08]"
+                        >
+                          <div
+                            style={{ width: `${widthPct}%` }}
+                            className={`h-full rounded-r-full shadow-[0_0_8px_#0219EA] transition-[width] duration-150 ${
+                              idx % 2 === 0 ? 'bg-[#0219EA]' : 'bg-[#4f6bff]'
+                            }`}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-px w-9 bg-white/15" />
+
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="font-mono text-[8px] text-slate-400">
+                    FRAME
+                  </span>
+                  <span className="font-mono text-[11px] font-bold tabular-nums text-white">
+                    {String(currentFrame).padStart(4, '0')}
+                  </span>
+                  <span className="font-mono text-[8px] text-[#4f6bff]">
+                    60 FPS
+                  </span>
+                </div>
+              </div>
+
+              {/* RIGHT FLUSH EDGE DOCK: AI Core Gauge, Live Ping Sparkline & Node Cluster */}
+              <div
+                style={{ opacity: railOpacity }}
+                className="hidden lg:flex pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 z-30 w-[66px] flex-col items-center gap-3.5 py-4 pl-2.5 pr-2 rounded-l-[18px] border-t border-l border-b border-[#4f6bff]/35 border-r-[3px] border-r-[#0219EA] bg-[linear-gradient(270deg,rgba(2,25,234,0.22)_0%,rgba(8,12,24,0.84)_100%)] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.16),-8px_0_32px_rgba(0,0,0,0.65),0_0_24px_rgba(2,25,234,0.28)]"
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-mono text-[8px] tracking-[0.08em] text-slate-400">
+                    AI CORE
+                  </span>
+                  <svg width="42" height="42" viewBox="0 0 42 42">
+                    <circle
+                      cx="21"
+                      cy="21"
+                      r="16"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="2.8"
+                    />
+                    <circle
+                      cx="21"
+                      cy="21"
+                      r="16"
+                      fill="none"
+                      stroke="#4f6bff"
+                      strokeWidth="2.8"
+                      strokeDasharray={aiCoreCircumference}
+                      strokeDashoffset={aiCoreOffset}
+                      strokeLinecap="round"
+                      transform="rotate(-90 21 21)"
+                      className="transition-[stroke-dashoffset] duration-200 ease-out"
+                    />
+                    <text
+                      x="21"
+                      y="24"
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      className="font-mono text-[9.5px] font-bold"
+                    >
+                      {aiCorePct}%
+                    </text>
+                  </svg>
+                  <span className="font-mono text-[8px] text-[#4f6bff]">
+                    ONLINE
+                  </span>
+                </div>
+
+                <div className="h-px w-9 bg-white/15" />
+
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-mono text-[8px] text-slate-400">
+                    PING
+                  </span>
+                  <svg width="44" height="26" viewBox="0 0 44 26">
+                    <polyline
+                      fill="none"
+                      stroke="#0219EA"
+                      strokeWidth="2"
+                      points={`2,${16 + Math.round(Math.sin(progress * 20) * 4)} 9,${11 + Math.round(Math.cos(progress * 22) * 3)} 16,${15 + Math.round(Math.sin(progress * 25) * 4)} 23,${7 + Math.round(Math.cos(progress * 18) * 3)} 30,${13 + Math.round(Math.sin(progress * 24) * 3)} 37,${8 + Math.round(Math.cos(progress * 20) * 3)} 42,${11 + Math.round(Math.sin(progress * 16) * 3)}`}
+                    />
+                    <circle
+                      cx="42"
+                      cy={11 + Math.round(Math.sin(progress * 16) * 3)}
+                      r="2.5"
+                      fill="#4f6bff"
+                    />
+                  </svg>
+                  <span className="font-mono text-[10px] font-bold tabular-nums text-white">
+                    {livePingMs}ms
+                  </span>
+                </div>
+
+                <div className="h-px w-9 bg-white/15" />
+
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-mono text-[8px] text-slate-400">
+                    NODES
+                  </span>
+                  <div className="flex h-[34px] items-end gap-[3px] pt-1">
+                    {nodeSeeds.map((seed, idx) => {
+                      const mod = Math.cos(progress * 24 + idx * 1.1) * 16
+                      const hPct = Math.min(
+                        100,
+                        Math.max(35, Math.round(seed + mod))
+                      )
+                      return (
+                        <div
+                          key={idx}
+                          style={{ height: `${hPct}%` }}
+                          className={`w-[5px] rounded-[2px] transition-[height] duration-150 ${
+                            idx % 2 === 0 ? 'bg-[#0219EA]' : 'bg-[#4f6bff]'
+                          }`}
+                        />
+                      )
+                    })}
+                  </div>
+                  <span className="font-mono text-[9px] text-[#4f6bff]">
+                    99.9%
+                  </span>
+                </div>
+              </div>
+            </>
+          )
+        })()}
+
+        {/* ============================================================
             ACT I (0% - 33%): Front-Facing Code & Neural HUDs
            ============================================================ */}
         <div
