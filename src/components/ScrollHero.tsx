@@ -452,12 +452,33 @@ export default function ScrollHero({
       wakeLoop()
     }
 
+    let lastMouseX = -1
+    let lastMouseY = -1
+    const onMouseMove = (e: MouseEvent) => {
+      const state = engineRef.current
+      if (!state.isHeroInView || state.isModalOpen) return
+      if (lastMouseX >= 0 && lastMouseY >= 0) {
+        const dist = Math.hypot(e.clientX - lastMouseX, e.clientY - lastMouseY)
+        if (dist < 1.5) return
+      }
+      lastMouseX = e.clientX
+      lastMouseY = e.clientY
+      state.lastInteractionTime = performance.now()
+      state.targetProgress = state.smoothProgress
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause()
+      }
+      wakeLoop()
+    }
+
+    let audioUnlocked = false
     const unlockAudioOnGesture = () => {
       const audio = audioRef.current
       const state = engineRef.current
-      if (!audio || isMutedRef.current) return
+      if (!audio) return
       const idleMs = performance.now() - state.lastInteractionTime
       const canPlayNow =
+        !isMutedRef.current &&
         state.isHeroInView &&
         !state.isVideoTooltipOpen &&
         !state.isModalOpen &&
@@ -465,16 +486,31 @@ export default function ScrollHero({
         idleMs > IDLE_RESUME_MS &&
         state.lastScrollProgress < 0.98
       if (canPlayNow && audio.paused) {
+        audioUnlocked = true
         const dur = audio.duration || AUTOPLAY_DURATION_SEC
         const targetTime = Math.min(dur - 0.05, Math.max(0, state.smoothProgress * dur))
         if (Math.abs(audio.currentTime - targetTime) > 0.45) {
           audio.currentTime = targetTime
         }
         audio.play().catch(() => {})
+      } else if (!audioUnlocked) {
+        const prevMuted = audio.muted
+        audio.muted = true
+        audio
+          .play()
+          .then(() => {
+            audio.pause()
+            audio.muted = prevMuted
+            audioUnlocked = true
+          })
+          .catch(() => {
+            audio.muted = prevMuted
+          })
       }
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
     window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true })
     window.addEventListener('keydown', unlockAudioOnGesture, { passive: true })
     window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true })
@@ -655,6 +691,7 @@ export default function ScrollHero({
     return () => {
       cancelAnimationFrame(rafId)
       window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('pointerdown', unlockAudioOnGesture)
       window.removeEventListener('keydown', unlockAudioOnGesture)
       window.removeEventListener('touchstart', unlockAudioOnGesture)
