@@ -197,6 +197,7 @@ function itemStageStyle(
 interface ScrollHeroProps {
   onOpenContact?: () => void
   onOpenSoftware?: () => void
+  onOpenAdmin?: () => void
   isModalOpen?: boolean
   isLoading?: boolean
   onLoadProgress?: (loaded: number, total: number) => void
@@ -205,6 +206,7 @@ interface ScrollHeroProps {
 export default function ScrollHero({
   onOpenContact,
   onOpenSoftware,
+  onOpenAdmin,
   isModalOpen = false,
   isLoading = false,
   onLoadProgress,
@@ -260,6 +262,7 @@ export default function ScrollHero({
   const menuItems = MENU_ITEMS.map((item) => {
     if (item.label === 'Contact') return { ...item, onClick: onOpenContact }
     if (item.label === 'Software Development') return { ...item, onClick: onOpenSoftware }
+    if (item.label === 'Admin Studio') return { ...item, onClick: onOpenAdmin }
     return item
   })
 

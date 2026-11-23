@@ -611,6 +611,7 @@ export default function SoftwareDevelopmentPage({
     'crm.engine.ready() — Drag opportunities across stages or trigger an AI workflow.'
   )
   const [terminalRunKey, setTerminalRunKey] = useState(0)
+  const [hoveredArchIdx, setHoveredArchIdx] = useState<number | null>(null)
 
   // AI Chat System Mock State (Auto-Animated + Interactive)
   const [activeChatIndex, setActiveChatIndex] = useState(0)
@@ -2509,10 +2510,17 @@ export default function SoftwareDevelopmentPage({
                 ].map((card, idx) => {
                   const offsetClass =
                     idx === 1 ? 'md:mt-6' : idx === 2 ? 'md:mt-12' : 'md:mt-0'
+                  const isCardHovered = hoveredArchIdx === idx
                   return (
                     <div
                       key={card.file}
-                      className={`sw-arch-float ${offsetClass}`}
+                      onMouseEnter={() => setHoveredArchIdx(idx)}
+                      onMouseLeave={() =>
+                        setHoveredArchIdx((prev) =>
+                          prev === idx ? null : prev
+                        )
+                      }
+                      className={`sw-arch-float ${offsetClass} hover:!transform-none`}
                     >
                       <SpotlightCard
                         spotlightColor="#0219EA"
@@ -2536,41 +2544,54 @@ export default function SoftwareDevelopmentPage({
                             <span className="text-[#0219EA] select-none shrink-0">
                               $
                             </span>
-                            <DecryptedText
-                              text={card.cmd}
-                              animateOn="view"
-                              speed={35}
-                              sequential
-                              revealDirection="start"
-                              scrambleColor="#0219EA"
-                              loop={true}
-                              loopDelay={4800 + idx * 1600}
-                            />
+                            {isCardHovered ? (
+                              <span>{card.cmd}</span>
+                            ) : (
+                              <DecryptedText
+                                text={card.cmd}
+                                animateOn="view"
+                                speed={35}
+                                sequential
+                                revealDirection="start"
+                                scrambleColor="#0219EA"
+                                loop={true}
+                                loopDelay={4800 + idx * 1600}
+                              />
+                            )}
                           </div>
 
                           <div className="relative mt-3 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
-                            <div
-                              aria-hidden="true"
-                              className="invisible select-none pointer-events-none"
-                            >
-                              &gt; {card.detail}
-                            </div>
-                            <TextType
-                              as="div"
-                              text={card.detail}
-                              prefix="> "
-                              prefixColor="#0219EA"
-                              typingSpeed={14}
-                              deletingSpeed={7}
-                              initialDelay={180 + idx * 1350}
-                              pauseDuration={3400 + idx * 900}
-                              loop={true}
-                              showCursor={true}
-                              cursorStyle="block"
-                              cursorColor="#0219EA"
-                              cursorBlinkDuration={0.55}
-                              className="absolute inset-0 text-blue-50/90"
-                            />
+                            {isCardHovered ? (
+                              <div className="text-blue-50/90">
+                                <span className="text-[#0219EA]">&gt; </span>
+                                {card.detail}
+                              </div>
+                            ) : (
+                              <>
+                                <div
+                                  aria-hidden="true"
+                                  className="invisible select-none pointer-events-none"
+                                >
+                                  &gt; {card.detail}
+                                </div>
+                                <TextType
+                                  as="div"
+                                  text={card.detail}
+                                  prefix="> "
+                                  prefixColor="#0219EA"
+                                  typingSpeed={14}
+                                  deletingSpeed={7}
+                                  initialDelay={180 + idx * 1350}
+                                  pauseDuration={3400 + idx * 900}
+                                  loop={true}
+                                  showCursor={true}
+                                  cursorStyle="block"
+                                  cursorColor="#0219EA"
+                                  cursorBlinkDuration={0.55}
+                                  className="absolute inset-0 text-blue-50/90"
+                                />
+                              </>
+                            )}
                           </div>
                         </div>
                       </SpotlightCard>

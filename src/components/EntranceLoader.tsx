@@ -12,7 +12,7 @@ const PAGE_IMAGES = [
   '/images/profile-about.png',
   '/images/credentials.webp',
   '/images/jblee-preview.png',
-  '/images/keynest-preview.png',
+  '/images/lasistah-preview.webp',
   '/images/elite-assistant.webp',
   '/images/Portfolio.jpg',
 ]

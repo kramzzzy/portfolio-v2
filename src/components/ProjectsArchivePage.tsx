@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { animate, createScope, createSpring, stagger } from 'animejs'
-import { portfolioData } from '../data/portfolio'
+import { portfolioData, type ProjectItem } from '../data/portfolio'
 import LetterGlitch from './react-bits/LetterGlitch'
 import MagicRings from './react-bits/MagicRings'
 import SpotlightCard from './react-bits/SpotlightCard'
 import StarBorder from './react-bits/StarBorder'
 
 interface ProjectsArchivePageProps {
+  projects?: ProjectItem[]
   isModalOpen: boolean
   onBackToHome: () => void
   onSelectProject: (index: number) => void
@@ -38,6 +39,7 @@ const STAR_VARIANTS = [
 ] as const
 
 export default function ProjectsArchivePage({
+  projects: projectsProp,
   isModalOpen,
   onBackToHome,
   onSelectProject,
@@ -45,7 +47,8 @@ export default function ProjectsArchivePage({
 }: ProjectsArchivePageProps) {
   const pageRef = useRef<HTMLDivElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
-  const { profile, projects } = portfolioData
+  const { profile } = portfolioData
+  const projects = projectsProp ?? portfolioData.projects
 
   const categories = [
     'ALL',

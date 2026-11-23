@@ -30,6 +30,7 @@ import {
   WebDevVisual,
 } from './components/AboutCardAnimations'
 import CareerTrackAnimation from './components/CareerTrackAnimation'
+import AdminStudioPage from './components/AdminStudioPage'
 import ContactModal from './components/ContactModal'
 import EntranceLoader from './components/EntranceLoader'
 import ProjectCaseStudyPage from './components/ProjectCaseStudyPage'
@@ -43,7 +44,7 @@ import MagicBento, { type MagicBentoItem } from './components/react-bits/MagicBe
 import MagicRings from './components/react-bits/MagicRings'
 import SpotlightCard from './components/react-bits/SpotlightCard'
 import StarBorder from './components/react-bits/StarBorder'
-import { portfolioData } from './data/portfolio'
+import { portfolioData, type ProjectItem } from './data/portfolio'
 
 const TOOL_LOGOS: LogoItem[] = [
   {
@@ -124,8 +125,16 @@ function isSoftwareDevPath(): boolean {
   return /^\/software\/?$/.test(window.location.pathname)
 }
 
+function isAdminStudioPath(): boolean {
+  if (typeof window === 'undefined') return false
+  return /^\/admin\/?$/.test(window.location.pathname)
+}
+
 export default function App() {
   const [contactOpen, setContactOpen] = useState(false)
+  const [projects, setProjects] = useState<ProjectItem[]>(
+    () => portfolioData.projects
+  )
   const [activeProjectIndex, setActiveProjectIndex] = useState<number | null>(() =>
     resolveProjectIndexFromPath()
   )
@@ -135,25 +144,31 @@ export default function App() {
   const [softwarePageOpen, setSoftwarePageOpen] = useState<boolean>(() =>
     isSoftwareDevPath()
   )
+  const [adminPageOpen, setAdminPageOpen] = useState<boolean>(() =>
+    isAdminStudioPath()
+  )
   const [isLoading, setIsLoading] = useState(
     () =>
       resolveProjectIndexFromPath() === null &&
       !isProjectsArchivePath() &&
-      !isSoftwareDevPath()
+      !isSoftwareDevPath() &&
+      !isAdminStudioPath()
   )
   const [loadedFrames, setLoadedFrames] = useState(0)
   const [totalFrames, setTotalFrames] = useState(180)
   const {
     profile,
     services,
-    projects,
     experience,
     education,
     coreCompetencies,
     skillMetrics,
   } = portfolioData
   const isSubPageOpen =
-    activeProjectIndex !== null || projectsPageOpen || softwarePageOpen
+    activeProjectIndex !== null ||
+    projectsPageOpen ||
+    softwarePageOpen ||
+    adminPageOpen
   const isAnyModalOpen = contactOpen || isSubPageOpen
 
   useEffect(() => {
@@ -161,6 +176,7 @@ export default function App() {
       setActiveProjectIndex(resolveProjectIndexFromPath())
       setProjectsPageOpen(isProjectsArchivePath())
       setSoftwarePageOpen(isSoftwareDevPath())
+      setAdminPageOpen(isAdminStudioPath())
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
@@ -175,6 +191,7 @@ export default function App() {
     }
     setProjectsPageOpen(false)
     setSoftwarePageOpen(false)
+    setAdminPageOpen(false)
     setActiveProjectIndex(idx)
   }
 
@@ -184,6 +201,7 @@ export default function App() {
     }
     setActiveProjectIndex(null)
     setSoftwarePageOpen(false)
+    setAdminPageOpen(false)
     setProjectsPageOpen(true)
   }
 
@@ -193,7 +211,48 @@ export default function App() {
     }
     setActiveProjectIndex(null)
     setProjectsPageOpen(false)
+    setAdminPageOpen(false)
     setSoftwarePageOpen(true)
+  }
+
+  const openAdminStudio = () => {
+    if (window.location.pathname !== '/admin') {
+      window.history.pushState({ page: 'admin' }, '', '/admin')
+    }
+    setActiveProjectIndex(null)
+    setProjectsPageOpen(false)
+    setSoftwarePageOpen(false)
+    setAdminPageOpen(true)
+  }
+
+  const navigateFromAdmin = (route: string) => {
+    if (route === '/projects') {
+      openProjectsArchive()
+      return
+    }
+    if (route === '/software') {
+      openSoftwarePage()
+      return
+    }
+    if (route === '/admin') {
+      openAdminStudio()
+      return
+    }
+    const caseMatch = route.match(/^\/case-study\/([^/]+)\/?$/)
+    if (caseMatch) {
+      const slug = decodeURIComponent(caseMatch[1])
+      const idx = projects.findIndex((p) => p.slug === slug)
+      if (idx >= 0) {
+        openCaseStudy(idx)
+        return
+      }
+    }
+    window.history.pushState({}, '', '/')
+    setActiveProjectIndex(null)
+    setProjectsPageOpen(false)
+    setSoftwarePageOpen(false)
+    setAdminPageOpen(false)
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
   }
 
   const closeToHomeWorks = () => {
@@ -201,6 +260,7 @@ export default function App() {
     setActiveProjectIndex(null)
     setProjectsPageOpen(false)
     setSoftwarePageOpen(false)
+    setAdminPageOpen(false)
     window.requestAnimationFrame(() => {
       const worksEl = document.getElementById('works')
       if (worksEl) {
@@ -432,8 +492,9 @@ export default function App() {
         />
       )}
 
-      {projectsPageOpen && activeProjectIndex === null && !softwarePageOpen && (
+      {projectsPageOpen && activeProjectIndex === null && !softwarePageOpen && !adminPageOpen && (
         <ProjectsArchivePage
+          projects={projects}
           isModalOpen={contactOpen}
           onBackToHome={closeToHomeWorks}
           onSelectProject={(idx) => openCaseStudy(idx)}
@@ -441,12 +502,23 @@ export default function App() {
         />
       )}
 
-      {softwarePageOpen && activeProjectIndex === null && (
+      {softwarePageOpen && activeProjectIndex === null && !adminPageOpen && (
         <SoftwareDevelopmentPage
           isModalOpen={contactOpen}
           onBackToHome={closeToHomeWorks}
           onOpenAllProjects={openProjectsArchive}
           onOpenContact={() => setContactOpen(true)}
+        />
+      )}
+
+      {adminPageOpen && activeProjectIndex === null && (
+        <AdminStudioPage
+          isModalOpen={contactOpen}
+          onBackToHome={closeToHomeWorks}
+          onOpenAllProjects={openProjectsArchive}
+          onOpenSoftware={openSoftwarePage}
+          onNavigateToRoute={navigateFromAdmin}
+          onProjectsUpdated={setProjects}
         />
       )}
 
@@ -460,6 +532,7 @@ export default function App() {
       <ScrollHero
         onOpenContact={() => setContactOpen(true)}
         onOpenSoftware={openSoftwarePage}
+        onOpenAdmin={openAdminStudio}
         isModalOpen={isAnyModalOpen}
         isLoading={isLoading}
         onLoadProgress={(loaded, total) => {
@@ -588,6 +661,15 @@ export default function App() {
             </h2>
 
             <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={openAdminStudio}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-neutral-300 hover:border-[#0219EA] hover:text-white transition-colors cursor-pointer"
+              >
+                <span>Admin &amp; MCP Studio</span>
+                <span className="text-[#4f6bff]">→</span>
+              </button>
+
               <button
                 type="button"
                 onClick={openSoftwarePage}

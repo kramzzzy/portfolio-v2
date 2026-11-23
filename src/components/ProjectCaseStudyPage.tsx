@@ -44,6 +44,7 @@ export default function ProjectCaseStudyPage({
   const processSectionRef = useRef<HTMLElement>(null)
   const [terminalRunId, setTerminalRunId] = useState(0)
   const [processInView, setProcessInView] = useState(false)
+  const [hoveredTerminalIdx, setHoveredTerminalIdx] = useState<number | null>(null)
   const { profile, projects } = portfolioData
   const { caseStudy } = project
 
@@ -433,10 +434,17 @@ export default function ProjectCaseStudyPage({
                 {caseStudy.challengesAndSolutions.map((item, idx) => {
                   const offsetClass =
                     idx === 1 ? 'md:mt-6' : idx === 2 ? 'md:mt-12' : 'md:mt-0'
+                  const isCardHovered = hoveredTerminalIdx === idx
                   return (
                     <div
                       key={item.title}
-                      className={`cs-terminal-float ${offsetClass}`}
+                      onMouseEnter={() => setHoveredTerminalIdx(idx)}
+                      onMouseLeave={() =>
+                        setHoveredTerminalIdx((prev) =>
+                          prev === idx ? null : prev
+                        )
+                      }
+                      className={`cs-terminal-float ${offsetClass} hover:!transform-none`}
                     >
                       <SpotlightCard
                         spotlightColor="#0219EA"
@@ -463,7 +471,7 @@ export default function ProjectCaseStudyPage({
                               $
                             </span>
                             <span className="truncate sm:whitespace-normal">
-                              {processInView ? (
+                              {processInView && !isCardHovered ? (
                                 <DecryptedText
                                   key={`cmd-${project.slug}-${idx}-${terminalRunId}`}
                                   text={item.title}
@@ -491,30 +499,39 @@ export default function ProjectCaseStudyPage({
 
                           {/* Terminal Streaming Solution Output (Continuous Staggered TextType Loop) */}
                           <div className="relative mt-3 text-xs sm:text-[13px] text-blue-50/90 leading-relaxed">
-                            <div
-                              aria-hidden="true"
-                              className="invisible select-none pointer-events-none"
-                            >
-                              &gt; {item.solution}
-                            </div>
-                            {processInView && (
-                              <TextType
-                                key={`out-${project.slug}-${idx}-${terminalRunId}`}
-                                as="div"
-                                text={item.solution}
-                                prefix="> "
-                                prefixColor="#0219EA"
-                                typingSpeed={14}
-                                deletingSpeed={7}
-                                initialDelay={150 + idx * 1350}
-                                pauseDuration={3400 + idx * 900}
-                                loop={true}
-                                showCursor={true}
-                                cursorStyle="block"
-                                cursorColor="#0219EA"
-                                cursorBlinkDuration={0.55}
-                                className="absolute inset-0 text-blue-50/90"
-                              />
+                            {isCardHovered ? (
+                              <div className="text-blue-50/90">
+                                <span className="text-[#0219EA]">&gt; </span>
+                                {item.solution}
+                              </div>
+                            ) : (
+                              <>
+                                <div
+                                  aria-hidden="true"
+                                  className="invisible select-none pointer-events-none"
+                                >
+                                  &gt; {item.solution}
+                                </div>
+                                {processInView && (
+                                  <TextType
+                                    key={`out-${project.slug}-${idx}-${terminalRunId}`}
+                                    as="div"
+                                    text={item.solution}
+                                    prefix="> "
+                                    prefixColor="#0219EA"
+                                    typingSpeed={14}
+                                    deletingSpeed={7}
+                                    initialDelay={150 + idx * 1350}
+                                    pauseDuration={3400 + idx * 900}
+                                    loop={true}
+                                    showCursor={true}
+                                    cursorStyle="block"
+                                    cursorColor="#0219EA"
+                                    cursorBlinkDuration={0.55}
+                                    className="absolute inset-0 text-blue-50/90"
+                                  />
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
