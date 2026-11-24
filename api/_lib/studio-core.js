@@ -403,7 +403,7 @@ export const MCP_TOOLS = [
         slug: {
           type: 'string',
           description:
-            'Optional project slug (e.g. "your-vatoni", "elite-assistant", "la-sistah", "jae-brad-lee").',
+            'Optional project slug (e.g. "aegis-crew-manning", "elite-assistant", "la-sistah", "jae-brad-lee", "your-vatoni").',
         },
       },
     },

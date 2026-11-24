@@ -711,7 +711,7 @@ export default function App() {
             once={false}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-            {projects.map((p, idx) => {
+            {projects.slice(0, 4).map((p, idx) => {
               const v = STAR_VARIANTS[idx % STAR_VARIANTS.length]
               return (
                 <SpotlightCard

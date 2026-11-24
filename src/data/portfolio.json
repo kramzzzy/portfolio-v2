@@ -122,129 +122,129 @@
   ],
   "projects": [
     {
-      "slug": "your-vatoni",
-      "title": "Your Vatoni - Portfolio",
+      "slug": "aegis-crew-manning",
+      "title": "AMI Maritime - Crew Manning",
       "category": "WEB DEVELOPMENT",
-      "description": "A modern personal portfolio showcasing executive virtual assistance, operations, and real estate support.",
-      "image": "/images/Portfolio.jpg",
-      "link": "https://yourvatoni.cfd/",
-      "previewUrl": "https://yourvatoni.cfd/",
+      "description": "A Philippine ship manning platform & unified Crew 201 portal connecting MARINA & STCW certified officers, marine engineers, and ratings with global fleets.",
+      "image": "/images/aegis-preview.webp",
+      "link": "https://www.aegiscrewmanning.com/",
+      "previewUrl": "https://www.aegiscrewmanning.com/",
       "caseStudy": {
-        "role": "Lead UI/UX Engineer & Full-Stack Web Developer",
-        "timeline": "2025 • Production Live",
-        "clientOrContext": "Toni Rose Ebio — Virtual Assistant, Operations & Real Estate Support Specialist",
-        "themeLabel": "Warm Editorial Glass & Cream Executive Persona",
-        "executiveSummary": "Designed and engineered an editorial web portfolio for a 6+ year Executive Virtual Assistant & Real Estate Support Specialist, transforming a static resume into an interactive client acquisition funnel.",
+        "role": "Lead Full-Stack Engineer & UI/UX Designer",
+        "timeline": "2026",
+        "clientOrContext": "AMI Maritime (Aegis Crew Manning) — Philippine Ship Manning & Crew Portal",
+        "themeLabel": "Maritime Obsidian, Gold Crest & Interactive Ocean Mesh",
+        "executiveSummary": "Engineered a modern Philippine ship manning web platform and unified Seafarer & Principal Crew Portal for a DMW-licensed, MLC 2006 compliant maritime agency—pairing 3D fleet visuals and GSAP motion with a 5-stage Crew 201 digital embarkation workflow.",
         "colorPalette": [
           {
-            "name": "Crimson Rose CTA",
-            "hex": "#CF4647",
-            "role": "Primary Action & Pill Buttons"
+            "name": "Maritime Gold",
+            "hex": "#D4AF37",
+            "role": "Primary CTA, Crest & Accents"
           },
           {
-            "name": "Warm Amber Accent",
-            "hex": "#E8913A",
-            "role": "Secondary Highlights & Badges"
+            "name": "Champagne Brass",
+            "hex": "#E4C15A",
+            "role": "Headline Emphasis & Hover Glow"
           },
           {
-            "name": "Soft Gold Highlight",
-            "hex": "#F5D061",
-            "role": "Ambient Radial Glows"
+            "name": "Obsidian Hull",
+            "hex": "#0A0A0A",
+            "role": "Primary Dark-Mode Canvas"
           },
           {
-            "name": "Editorial Cream",
-            "hex": "#FDF8F3",
-            "role": "Primary Warm Canvas"
+            "name": "Deep Slate Surface",
+            "hex": "#141311",
+            "role": "Elevated Fleet & Portal Cards"
           },
           {
-            "name": "Sandstone Secondary",
-            "hex": "#F5EDE4",
-            "role": "Section & Card Surface"
+            "name": "Warm Sail Ivory",
+            "hex": "#FAF7F0",
+            "role": "High-Contrast Feature Panels"
           },
           {
-            "name": "Espresso Ink",
-            "hex": "#2D2A26",
-            "role": "High-Contrast Editorial Copy"
+            "name": "Bridge White",
+            "hex": "#FFFFFF",
+            "role": "Primary Display Typography"
           }
         ],
         "typography": [
           {
             "role": "Heading",
-            "family": "Playfair Display",
-            "weights": "400 • 600 • 700",
-            "styleNote": "High-contrast editorial serif for executive authority"
+            "family": "Manrope",
+            "weights": "500 • 600 • 700 • 800",
+            "styleNote": "Bold geometric display face for fleet command & rank headlines"
           },
           {
             "role": "Body",
             "family": "Inter",
-            "weights": "300 • 400 • 500 • 600",
-            "styleNote": "Clean geometric sans-serif for service & workflow clarity"
+            "weights": "300 • 400 • 500 • 600 • 700",
+            "styleNote": "High-legibility UI sans for Crew 201 forms & maritime compliance copy"
           },
           {
             "role": "Accent / Mono",
-            "family": "SFMono-Regular / Menlo",
-            "weights": "400 • 500",
-            "styleNote": "Monospace tags for experience metrics & section kickers"
+            "family": "IBM Plex Mono",
+            "weights": "400 • 500 • 600",
+            "styleNote": "Technical monospace for STCW stages, vessel divisions & document codes"
           }
         ],
         "architectureStack": [
-          "React 19",
+          "React",
           "TypeScript",
           "Tailwind CSS v4",
-          "Vite",
-          "Responsive Glassmorphism",
-          "Cloudflare DNS"
+          "GSAP",
+          "Three.js",
+          "Seafarer & Principal Crew Portal"
         ],
         "challengesAndSolutions": [
           {
-            "step": "01 // ARCHITECTURE",
-            "title": "Static Resume Bottleneck",
-            "problem": "Prospective real estate and executive clients were bouncing from static PDF resumes and scattered link trees that failed to convey operational polish.",
-            "solution": "Architected a single-page React + Tailwind v4 portfolio with structured service positioning, executive hero framing, and direct consultation CTAs."
+            "step": "01",
+            "title": "5-Stage Digital Crew 201 Embarkation",
+            "problem": "Traditional manning applications relied on walk-in paper dossiers, fragmented PEME medical checks, and opaque mobilization timelines for seafarers and shipowners.",
+            "solution": "Structured a transparent 5-stage embarkation sequence covering digital Crew 201 intake, COC/COP & SIRB credential verification, principal interviews, clearance processing, and vessel sign-on."
           },
           {
-            "step": "02 // UI/UX DESIGN",
-            "title": "Executive Trust & Visual Authority",
-            "problem": "Generic dark-mode developer templates felt misaligned with high-trust executive operations and luxury real estate support.",
-            "solution": "Paired Playfair Display editorial serif headings with warm cream glassmorphic surfaces (#FDF8F3) and floating credential cards (6+ Years Experience)."
+            "step": "02",
+            "title": "Department-Aware Fleet & Rank Routing",
+            "problem": "Deck officers, marine engineers, ETOs, and shipboard ratings across container, bulk, tanker, and offshore fleets needed tailored application paths without sifting through irrelevant openings.",
+            "solution": "Built interactive Fleet Division cards and rank selectors (Master Mariner, Chief Engineer, ETO, Boatswain, Able Seaman) that pre-configure the 5-step seafarer application by department."
           },
           {
-            "step": "03 // CONVERSION FUNNEL",
-            "title": "Mobile Discovery & Inquiry Flow",
-            "problem": "Busy founders reviewing candidates on mobile needed immediate visibility into core skills, tools, and availability without pinching or zooming.",
-            "solution": "Built fluid mobile-first breakpoints with smooth section anchors (Home, About, Skills, Experience, Contact) and a direct Let’s Talk conversion trigger."
+            "step": "03",
+            "title": "Unified Seafarer & Principal Portal",
+            "problem": "Both shipping principals and deployed crew lacked a single reliable workspace to track document expiries, interviews, contracts, and upcoming vessel rotations.",
+            "solution": "Designed a unified dual-role Crew Portal with dark/light theme support, Three.js + GSAP editorial transitions, and clear MLC 2006 zero-placement-fee verification."
           }
         ],
         "impactMetrics": [
           {
-            "label": "Lead Conversion",
-            "before": "Static PDF / Linktree",
-            "after": "Interactive Web Funnel",
-            "delta": "+3.2x Inquiry Engagement"
+            "label": "Embarkation Flow",
+            "before": "Paper Dossiers & Walk-Ins",
+            "after": "5-Stage Digital Crew 201",
+            "delta": "End-to-End Mobilization"
           },
           {
-            "label": "First Contentful Paint",
-            "before": "3.4s Template Baseline",
-            "after": "0.8s Vite Static Bundle",
-            "delta": "76% Faster Load"
+            "label": "Compliance & Ethics",
+            "before": "Opaque Agency Handovers",
+            "after": "DMW, MARINA & STCW Audited",
+            "delta": "0% Placement Fee"
           },
           {
-            "label": "Mobile Experience",
-            "before": "Desktop-Only PDF Layout",
-            "after": "Fluid Responsive Grid",
-            "delta": "98/100 Lighthouse UX"
+            "label": "Portal Visibility",
+            "before": "Fragmented Status Calls",
+            "after": "Seafarer & Principal Portal",
+            "delta": "24/7 Live Tracking"
           }
         ],
         "futureRoadmap": [
           {
-            "title": "Calendly & GoHighLevel Webhook Booking",
-            "badge": "AI & CRM Automation",
-            "detail": "Embed an inline discovery-call scheduler synced directly to an automated client onboarding and email follow-up pipeline."
+            "title": "Automated MARINA & STCW Document Expiry Alerts",
+            "badge": "Compliance Automation",
+            "detail": "Monitor SIRB, passport, PEME medical, and STCW certificate expiries automatically and trigger scheduled renewal reminders for officers and crewing staff."
           },
           {
-            "title": "Interactive Real Estate SOP Vault",
-            "badge": "Content Architecture",
-            "detail": "Add filterable workflow drawers showcasing redacted transaction coordination checklists and CRM automation blueprints."
+            "title": "AI Sea-Service Matrix & CV Parsing",
+            "badge": "AI & Document OCR",
+            "detail": "Extract vessel tonnage, engine kW ratings, and sea-service dates from uploaded seafarer CVs directly into standardized Crew 201 profiles."
           }
         ]
       }
@@ -629,6 +629,134 @@
             "title": "Instant Voiceover & Edit Rate Calculator",
             "badge": "Interactive Tooling",
             "detail": "Build a live script word-count and broadcast-rights estimator that generates instant production quotes and books studio sessions."
+          }
+        ]
+      }
+    },
+    {
+      "slug": "your-vatoni",
+      "title": "Your Vatoni - Portfolio",
+      "category": "WEB DEVELOPMENT",
+      "description": "A modern personal portfolio showcasing executive virtual assistance, operations, and real estate support.",
+      "image": "/images/Portfolio.jpg",
+      "link": "https://yourvatoni.cfd/",
+      "previewUrl": "https://yourvatoni.cfd/",
+      "caseStudy": {
+        "role": "Lead UI/UX Engineer & Full-Stack Web Developer",
+        "timeline": "2025 • Production Live",
+        "clientOrContext": "Toni Rose Ebio — Virtual Assistant, Operations & Real Estate Support Specialist",
+        "themeLabel": "Warm Editorial Glass & Cream Executive Persona",
+        "executiveSummary": "Designed and engineered an editorial web portfolio for a 6+ year Executive Virtual Assistant & Real Estate Support Specialist, transforming a static resume into an interactive client acquisition funnel.",
+        "colorPalette": [
+          {
+            "name": "Crimson Rose CTA",
+            "hex": "#CF4647",
+            "role": "Primary Action & Pill Buttons"
+          },
+          {
+            "name": "Warm Amber Accent",
+            "hex": "#E8913A",
+            "role": "Secondary Highlights & Badges"
+          },
+          {
+            "name": "Soft Gold Highlight",
+            "hex": "#F5D061",
+            "role": "Ambient Radial Glows"
+          },
+          {
+            "name": "Editorial Cream",
+            "hex": "#FDF8F3",
+            "role": "Primary Warm Canvas"
+          },
+          {
+            "name": "Sandstone Secondary",
+            "hex": "#F5EDE4",
+            "role": "Section & Card Surface"
+          },
+          {
+            "name": "Espresso Ink",
+            "hex": "#2D2A26",
+            "role": "High-Contrast Editorial Copy"
+          }
+        ],
+        "typography": [
+          {
+            "role": "Heading",
+            "family": "Playfair Display",
+            "weights": "400 • 600 • 700",
+            "styleNote": "High-contrast editorial serif for executive authority"
+          },
+          {
+            "role": "Body",
+            "family": "Inter",
+            "weights": "300 • 400 • 500 • 600",
+            "styleNote": "Clean geometric sans-serif for service & workflow clarity"
+          },
+          {
+            "role": "Accent / Mono",
+            "family": "SFMono-Regular / Menlo",
+            "weights": "400 • 500",
+            "styleNote": "Monospace tags for experience metrics & section kickers"
+          }
+        ],
+        "architectureStack": [
+          "React 19",
+          "TypeScript",
+          "Tailwind CSS v4",
+          "Vite",
+          "Responsive Glassmorphism",
+          "Cloudflare DNS"
+        ],
+        "challengesAndSolutions": [
+          {
+            "step": "01 // ARCHITECTURE",
+            "title": "Static Resume Bottleneck",
+            "problem": "Prospective real estate and executive clients were bouncing from static PDF resumes and scattered link trees that failed to convey operational polish.",
+            "solution": "Architected a single-page React + Tailwind v4 portfolio with structured service positioning, executive hero framing, and direct consultation CTAs."
+          },
+          {
+            "step": "02 // UI/UX DESIGN",
+            "title": "Executive Trust & Visual Authority",
+            "problem": "Generic dark-mode developer templates felt misaligned with high-trust executive operations and luxury real estate support.",
+            "solution": "Paired Playfair Display editorial serif headings with warm cream glassmorphic surfaces (#FDF8F3) and floating credential cards (6+ Years Experience)."
+          },
+          {
+            "step": "03 // CONVERSION FUNNEL",
+            "title": "Mobile Discovery & Inquiry Flow",
+            "problem": "Busy founders reviewing candidates on mobile needed immediate visibility into core skills, tools, and availability without pinching or zooming.",
+            "solution": "Built fluid mobile-first breakpoints with smooth section anchors (Home, About, Skills, Experience, Contact) and a direct Let’s Talk conversion trigger."
+          }
+        ],
+        "impactMetrics": [
+          {
+            "label": "Lead Conversion",
+            "before": "Static PDF / Linktree",
+            "after": "Interactive Web Funnel",
+            "delta": "+3.2x Inquiry Engagement"
+          },
+          {
+            "label": "First Contentful Paint",
+            "before": "3.4s Template Baseline",
+            "after": "0.8s Vite Static Bundle",
+            "delta": "76% Faster Load"
+          },
+          {
+            "label": "Mobile Experience",
+            "before": "Desktop-Only PDF Layout",
+            "after": "Fluid Responsive Grid",
+            "delta": "98/100 Lighthouse UX"
+          }
+        ],
+        "futureRoadmap": [
+          {
+            "title": "Calendly & GoHighLevel Webhook Booking",
+            "badge": "AI & CRM Automation",
+            "detail": "Embed an inline discovery-call scheduler synced directly to an automated client onboarding and email follow-up pipeline."
+          },
+          {
+            "title": "Interactive Real Estate SOP Vault",
+            "badge": "Content Architecture",
+            "detail": "Add filterable workflow drawers showcasing redacted transaction coordination checklists and CRM automation blueprints."
           }
         ]
       }

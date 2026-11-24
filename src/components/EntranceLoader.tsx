@@ -11,6 +11,7 @@ const PAGE_IMAGES = [
   '/images/icons/site.svg',
   '/images/profile-about.png',
   '/images/credentials.webp',
+  '/images/aegis-preview.webp',
   '/images/jblee-preview.png',
   '/images/lasistah-preview.webp',
   '/images/elite-assistant.webp',
